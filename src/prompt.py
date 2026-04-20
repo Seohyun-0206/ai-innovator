@@ -14,10 +14,14 @@ def _format_question(q: Question, include_answer: bool = False) -> str:
     return "\n".join(lines)
 
 
+_INSTRUCTION = "ONLY output A, B, C, or D. Do not output anything else."
+
+
 def build_prompt(question: Question) -> str:
     subject_display = question.subject.replace("_", " ").title()
     header = (
-        f"The following are multiple choice questions (with answers) about {subject_display}.\n\n"
+        f"The following are multiple choice questions (with answers) about {subject_display}.\n"
+        f"{_INSTRUCTION}\n\n"
     )
     shots = "\n\n".join(
         _format_question(ex, include_answer=True) for ex in question.few_shot_examples

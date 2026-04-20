@@ -29,9 +29,11 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    from src.downloader import download_mmlu_if_needed
     from src.models import get_model
     from src.evaluator import Evaluator
 
+    download_mmlu_if_needed()
     model = get_model(args.model)
     evaluator = Evaluator(
         model=model,

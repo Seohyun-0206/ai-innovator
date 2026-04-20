@@ -4,19 +4,28 @@ from typing import Optional
 import numpy as np
 
 
-ANSWER_PATTERN = re.compile(r"\b([A-D])\b")
-
-
 def parse_answer(text: str) -> Optional[str]:
     text = text.strip()
-    # "Answer: X" 또는 "The answer is X" 패턴 우선
-    explicit = re.search(r"(?:answer\s*(?:is|:)\s*)([A-D])", text, re.IGNORECASE)
+
+    # 1. 단일 문자 응답 (지시문 준수 시 가장 흔한 케이스)
+    if text.upper() in ("A", "B", "C", "D"):
+        return text.upper()
+
+    # 2. "Answer: X" / "The answer is X" 명시 패턴
+    explicit = re.search(r"(?:answer\s*(?:is|:)\s*)\(?([A-D])\)?", text, re.IGNORECASE)
     if explicit:
         return explicit.group(1).upper()
-    # 첫 번째 A/B/C/D 토큰
-    match = ANSWER_PATTERN.search(text)
+
+    # 3. "(A)" / "A)" / "A." 형태
+    paren = re.search(r"\(?([A-D])\)?[.)]\s", text, re.IGNORECASE)
+    if paren:
+        return paren.group(1).upper()
+
+    # 4. 단어 경계 기준 첫 번째 A/B/C/D
+    match = re.search(r"\b([A-D])\b", text, re.IGNORECASE)
     if match:
         return match.group(1).upper()
+
     return None
 
 

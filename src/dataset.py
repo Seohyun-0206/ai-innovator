@@ -102,21 +102,49 @@ def load_balanced_questions(
     questions: list[Question] = []
 
     for category, subjects in CATEGORIES.items():
+        # 1차: 과목별 균등 배분
         per_subject = max(1, per_category // len(subjects))
         category_questions: list[Question] = []
+        subject_pools: dict[str, tuple[list, list]] = {}
 
         for subject in subjects:
             try:
                 test_rows, dev_rows = _load_subject(subject)
             except FileNotFoundError:
                 continue
-
+            subject_pools[subject] = (test_rows, dev_rows)
             dev_qs = [_row_to_question(r, subject) for r in dev_rows]
             sampled = rng.sample(test_rows, min(per_subject, len(test_rows)))
             for row in sampled:
                 q = _row_to_question(row, subject)
                 q.few_shot_examples = dev_qs[:num_shots]
                 category_questions.append(q)
+
+        # 2차: 부족분을 남은 풀에서 추가 샘플링해 per_category 채우기
+        already_used: dict[str, set] = {
+            q.subject: set() for q in category_questions
+        }
+        for q in category_questions:
+            already_used[q.subject].add(q.question)
+
+        remaining_subjects = list(subject_pools.keys())
+        rng.shuffle(remaining_subjects)
+        idx = 0
+        while len(category_questions) < per_category and remaining_subjects:
+            subject = remaining_subjects[idx % len(remaining_subjects)]
+            idx += 1
+            test_rows, dev_rows = subject_pools[subject]
+            used = already_used.setdefault(subject, set())
+            pool = [r for r in test_rows if r["question"] not in used]
+            if not pool:
+                remaining_subjects = [s for s in remaining_subjects if s != subject]
+                continue
+            row = rng.choice(pool)
+            used.add(row["question"])
+            dev_qs = [_row_to_question(r, subject) for r in dev_rows]
+            q = _row_to_question(row, subject)
+            q.few_shot_examples = dev_qs[:num_shots]
+            category_questions.append(q)
 
         rng.shuffle(category_questions)
         questions.extend(category_questions[:per_category])
