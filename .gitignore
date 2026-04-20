@@ -2,7 +2,6 @@
 CLAUDE.md
 data/
 results/
-outputs/
 config.py
 __pycache__/
 *.pyc
