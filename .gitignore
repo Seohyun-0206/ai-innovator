@@ -5,3 +5,5 @@ results/
 config.py
 __pycache__/
 *.pyc
+hybrid_ai_platform_pages/
+AGENTS.md

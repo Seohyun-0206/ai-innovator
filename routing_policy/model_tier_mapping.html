@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hybrid LLM Routing Policy — Model Tier Mapping</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3248;
+      --text: #e2e8f0;
+      --muted: #8892a4;
+      --accent-light: #60a5fa;
+      --accent-std:   #34d399;
+      --accent-adv:   #a78bfa;
+      --accent-ctx:   #fb923c;
+      --accent-str:   #f472b6;
+      --light-bg: #1e2d45;
+      --std-bg:   #1a3530;
+      --adv-bg:   #2a2040;
+      --ctx-bg:   #3a2a1a;
+      --str-bg:   #3a1a2e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 0 0 80px;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #1a1d27 0%, #12151f 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 48px 40px 36px;
+      text-align: center;
+    }
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      background: linear-gradient(90deg, #60a5fa, #a78bfa, #f472b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    header p { color: var(--muted); margin-top: 8px; font-size: 0.95rem; }
+    .meta-badges { display: flex; gap: 10px; justify-content: center; margin-top: 18px; flex-wrap: wrap; }
+    .badge { padding: 4px 12px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; border: 1px solid; }
+
+    /* ── Layout ── */
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+    section { margin-top: 56px; }
+    h2 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #cbd5e1;
+      border-left: 3px solid #60a5fa;
+      padding-left: 12px;
+      margin-bottom: 24px;
+      letter-spacing: 0.2px;
+    }
+
+    /* ── Tier Cards ── */
+    .tier-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px; }
+    .tier-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 18px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.15s;
+    }
+    .tier-card:hover { transform: translateY(-2px); }
+    .tier-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+    .tier-card.light { background: var(--light-bg); } .tier-card.light::before { background: var(--accent-light); }
+    .tier-card.std   { background: var(--std-bg);   } .tier-card.std::before   { background: var(--accent-std);   }
+    .tier-card.adv   { background: var(--adv-bg);   } .tier-card.adv::before   { background: var(--accent-adv);   }
+    .tier-card.ctx   { background: var(--ctx-bg);   } .tier-card.ctx::before   { background: var(--accent-ctx);   }
+    .tier-card.str   { background: var(--str-bg);   } .tier-card.str::before   { background: var(--accent-str);   }
+    .tier-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .tier-card.light .tier-label { color: var(--accent-light); }
+    .tier-card.std   .tier-label { color: var(--accent-std);   }
+    .tier-card.adv   .tier-label { color: var(--accent-adv);   }
+    .tier-card.ctx   .tier-label { color: var(--accent-ctx);   }
+    .tier-card.str   .tier-label { color: var(--accent-str);   }
+    .tier-name { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+    .tier-role { font-size: 0.8rem; color: var(--muted); margin-bottom: 10px; }
+    .tier-desc { font-size: 0.82rem; color: #94a3b8; margin-bottom: 12px; line-height: 1.5; }
+    .tier-purpose { font-size: 0.78rem; color: var(--muted); background: rgba(0,0,0,0.2); border-radius: 6px; padding: 6px 10px; }
+
+    /* ── Tier Chips & Tags ── */
+    .tier-chip {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      border: 1px solid;
+      white-space: nowrap;
+    }
+    .chip-light { color: var(--accent-light); border-color: var(--accent-light); background: rgba(96,165,250,0.08); }
+    .chip-std   { color: var(--accent-std);   border-color: var(--accent-std);   background: rgba(52,211,153,0.08); }
+    .chip-adv   { color: var(--accent-adv);   border-color: var(--accent-adv);   background: rgba(167,139,250,0.08); }
+    .chip-ctx   { color: var(--accent-ctx);   border-color: var(--accent-ctx);   background: rgba(251,146,60,0.08);  }
+    .chip-str   { color: var(--accent-str);   border-color: var(--accent-str);   background: rgba(244,114,182,0.08); }
+    .provider-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+    .model-name { font-weight: 600; font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 0.85rem; }
+    .model-sub  { font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
+    .tag-list { display: flex; flex-wrap: wrap; gap: 6px; }
+    .model-tag { font-size: 0.72rem; font-family: monospace; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 4px; padding: 2px 7px; color: #94a3b8; }
+
+    /* ── Recommended Model Table ── */
+    .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    thead th {
+      background: var(--surface2);
+      padding: 12px 16px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--surface2); }
+    tbody td { padding: 13px 16px; vertical-align: top; }
+
+    /* ── Toggle Tier Blocks ── */
+    .toggle-tier {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+    .toggle-tier.light { border-left: 3px solid var(--accent-light); }
+    .toggle-tier.std   { border-left: 3px solid var(--accent-std);   }
+    .toggle-tier.adv   { border-left: 3px solid var(--accent-adv);   }
+    .toggle-tier.ctx   { border-left: 3px solid var(--accent-ctx);   }
+    .toggle-tier.str   { border-left: 3px solid var(--accent-str);   }
+    .toggle-tier summary {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      cursor: pointer;
+      background: var(--surface);
+      user-select: none;
+      outline: none;
+      list-style: none;
+      transition: background 0.15s;
+    }
+    .toggle-tier summary::-webkit-details-marker { display: none; }
+    .toggle-tier summary::marker { display: none; }
+    .toggle-tier summary:hover { background: var(--surface2); }
+    .toggle-tier[open] > summary { border-bottom: 1px solid var(--border); }
+    .toggle-summary-info { flex: 1; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .toggle-summary-role { font-size: 0.78rem; color: var(--muted); }
+    .toggle-count {
+      font-size: 0.7rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 2px 9px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .toggle-chevron {
+      width: 16px; height: 16px;
+      color: var(--muted);
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+    .toggle-tier[open] .toggle-chevron { transform: rotate(90deg); }
+    .toggle-table { overflow-x: auto; }
+    .toggle-table table { border-radius: 0; border: none; }
+    .toggle-table thead th { border-radius: 0; }
+
+    /* ── Service Function Table ── */
+    .svc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; }
+    .svc-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+    .svc-name { font-weight: 600; font-size: 0.9rem; margin-bottom: 6px; }
+    .svc-row  { font-size: 0.78rem; color: var(--muted); margin-bottom: 3px; }
+    .svc-row span { color: #94a3b8; }
+
+    /* ── Routing Rules ── */
+    .rules-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; }
+    .rule-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; display: flex; gap: 14px; align-items: flex-start; }
+    .rule-id { font-size: 0.7rem; font-weight: 700; color: var(--muted); background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 3px 8px; white-space: nowrap; margin-top: 2px; }
+    .rule-body { flex: 1; }
+    .rule-cond { font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; }
+    .rule-route { font-size: 0.78rem; color: var(--muted); }
+    .rule-opt  { font-size: 0.74rem; color: #64748b; margin-top: 2px; }
+
+    /* ── Footer ── */
+    footer { text-align: center; color: var(--muted); font-size: 0.78rem; margin-top: 80px; padding-top: 24px; border-top: 1px solid var(--border); }
+
+    @media (max-width: 600px) {
+      header { padding: 32px 20px 24px; }
+      header h1 { font-size: 1.4rem; }
+      .container { padding: 0 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Hybrid LLM Routing Policy</h1>
+  <p>Model Tier Mapping &amp; Routing Rule Reference</p>
+  <div class="meta-badges">
+    <span class="badge" style="color:#fb923c;border-color:#fb923c;background:rgba(251,146,60,0.08)">v1.0 · 2026-05-22</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- ① Tier 정의 -->
+  <section>
+    <h2>Tier 정의</h2>
+    <div class="tier-grid">
+      <div class="tier-card light">
+        <div class="tier-label">Tier 1</div>
+        <div class="tier-name">Lightweight</div>
+        <div class="tier-role">Fast Path</div>
+        <div class="tier-desc">낮은 latency와 낮은 비용을 최우선으로 하는 경량 모델 티어. 단순·반복적 요청에서 실시간 응답을 보장한다.</div>
+        <div class="tier-purpose">실시간 응답 · FAQ · 단순 질의 · SLA 우선 요청</div>
+      </div>
+      <div class="tier-card std">
+        <div class="tier-label">Tier 2</div>
+        <div class="tier-name">Standard</div>
+        <div class="tier-role">General Path</div>
+        <div class="tier-desc">정확도와 latency를 균형 있게 처리하는 범용 모델 티어. 대부분의 업무 질의를 커버한다.</div>
+        <div class="tier-purpose">일반 QA · 업무 질의 · 기본 설명</div>
+      </div>
+      <div class="tier-card adv">
+        <div class="tier-label">Tier 3</div>
+        <div class="tier-name">Advanced</div>
+        <div class="tier-role">Accurate / Escalation Path</div>
+        <div class="tier-desc">높은 정확도와 복합 추론이 요구되는 고난도 요청을 처리한다. 비용과 응답 지연이 수반될 수 있으나 신뢰성이 최우선이다.</div>
+        <div class="tier-purpose">고난도 추론 · 정책/규정 QA · 최종 검증 · Escalation</div>
+      </div>
+      <div class="tier-card ctx">
+        <div class="tier-label">Tier 4</div>
+        <div class="tier-name">Long Context</div>
+        <div class="tier-role">Context Path</div>
+        <div class="tier-desc">긴 문맥을 안정적으로 유지하며 처리하는 모델 티어. RAG 및 긴 문서 분석에 특화되어 있다.</div>
+        <div class="tier-purpose">문서 QA · RAG · 회의록 분석 · 긴 문서 요약</div>
+      </div>
+      <div class="tier-card str">
+        <div class="tier-label">Tier 5</div>
+        <div class="tier-name">Structured</div>
+        <div class="tier-role">Structured Output Path</div>
+        <div class="tier-desc">JSON·SQL 등 구조화된 형식을 안정적으로 생성하는 모델 티어. Format validation과 함께 운영된다.</div>
+        <div class="tier-purpose">SQL / JSON 생성 · API 응답 · 정형 출력</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ② Tier별 추천 모델 -->
+  <section>
+    <h2>Tier별 추천 모델</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Tier</th>
+            <th>역할</th>
+            <th>특징</th>
+            <th>주요 목적</th>
+            <th>추천 / 예시 모델</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="tier-chip chip-light">Lightweight</span></td>
+            <td>Fast Path</td>
+            <td>low latency / low cost</td>
+            <td>실시간 응답, FAQ, 단순 질의</td>
+            <td><div class="tag-list">
+              <span class="model-tag">Phi-3 Mini</span>
+              <span class="model-tag">Qwen 2.5 3B</span>
+              <span class="model-tag">Qwen 3B</span>
+              <span class="model-tag">Gemma 2B</span>
+              <span class="model-tag">Llama 3.2 3B</span>
+            </div></td>
+          </tr>
+          <tr>
+            <td><span class="tier-chip chip-std">Standard</span></td>
+            <td>General Path</td>
+            <td>balanced</td>
+            <td>일반 QA, 업무 질의, 기본 설명</td>
+            <td><div class="tag-list">
+              <span class="model-tag">Llama 3 8B</span>
+              <span class="model-tag">Llama 3.1 8B</span>
+              <span class="model-tag">Qwen 2.5 7B/8B</span>
+              <span class="model-tag">Mistral 7B</span>
+            </div></td>
+          </tr>
+          <tr>
+            <td><span class="tier-chip chip-adv">Advanced</span></td>
+            <td>Accurate / Escalation Path</td>
+            <td>high accuracy / reasoning</td>
+            <td>고난도 추론, 정책/규정 QA, 재검증</td>
+            <td><div class="tag-list">
+              <span class="model-tag">GPT-4o</span>
+              <span class="model-tag">Claude 3 Opus</span>
+              <span class="model-tag">Claude 3.5 Sonnet</span>
+              <span class="model-tag">GPT-OSS-120B</span>
+              <span class="model-tag">Qwen 2.5 72B</span>
+            </div></td>
+          </tr>
+          <tr>
+            <td><span class="tier-chip chip-ctx">Long Context</span></td>
+            <td>Context Path</td>
+            <td>long context handling</td>
+            <td>문서 QA, RAG, 회의록 분석, 긴 문서 요약</td>
+            <td><div class="tag-list">
+              <span class="model-tag">Kimi</span>
+              <span class="model-tag">Gemini 1.5 Pro</span>
+              <span class="model-tag">Claude 3.5 Sonnet</span>
+              <span class="model-tag">Qwen Long</span>
+              <span class="model-tag">GPT-4o</span>
+            </div></td>
+          </tr>
+          <tr>
+            <td><span class="tier-chip chip-str">Structured</span></td>
+            <td>Structured Output Path</td>
+            <td>format stability</td>
+            <td>SQL/JSON 생성, API 응답, 정형 출력</td>
+            <td><div class="tag-list">
+              <span class="model-tag">GPT-4o</span>
+              <span class="model-tag">Claude 3.5 Sonnet</span>
+              <span class="model-tag">Qwen 2.5 Coder</span>
+              <span class="model-tag">DeepSeek Coder</span>
+              <span class="model-tag">Code Llama</span>
+            </div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ③ 모델별 티어 매핑표 -->
+  <section>
+    <h2>모델별 티어 매핑표</h2>
+
+    <!-- Lightweight -->
+    <details class="toggle-tier light" open>
+      <summary>
+        <div class="toggle-summary-info">
+          <span class="tier-chip chip-light">Lightweight</span>
+          <span class="toggle-summary-role">Fast Path · low latency / low cost</span>
+        </div>
+        <span class="toggle-count">5 models</span>
+        <svg class="toggle-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6,3 11,8 6,13"/>
+        </svg>
+      </summary>
+      <div class="toggle-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Provider</th>
+              <th>Primary Role</th>
+              <th>Strength</th>
+              <th>Recommended Use</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="model-name">Phi-3 Mini</span></td>
+              <td><span class="provider-tag">Microsoft</span></td>
+              <td>Fast Path</td>
+              <td>초경량, 낮은 latency</td>
+              <td>FAQ, 단순 질의</td>
+            </tr>
+            <tr>
+              <td><span class="model-name">Qwen 2.5 3B</span></td>
+              <td><span class="provider-tag">Alibaba</span></td>
+              <td>Fast Path</td>
+              <td>낮은 latency, 저비용</td>
+              <td>실시간 응답, FAQ</td>
+            </tr>
+            <tr>
+              <td><span class="model-name">Qwen 3B</span></td>
+              <td><span class="provider-tag">Alibaba</span></td>
+              <td>Fast Path</td>
+              <td>경량, 빠른 응답</td>
+              <td>FAQ, 단순 질의</td>
+            </tr>
+            <tr>
+              <td><span class="model-name">Gemma 2B</span></td>
+              <td><span class="provider-tag">Google</span></td>
+              <td>Fast Path</td>
+              <td>초경량, 저비용</td>
+              <td>단순 질의, 빠른 응답</td>
+            </tr>
+            <tr>
+              <td><span class="model-name">Llama 3.2 3B</span></td>
+              <td><span class="provider-tag">Meta</span></td>
+              <td>Fast Path</td>
+              <td>낮은 latency, 오픈소스</td>
+              <td>FAQ, 실시간 응답</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+
+    <!-- Standard -->
+    <details class="toggle-tier std">
+      <summary>
+        <div class="toggle-summary-info">
+          <span class="tier-chip chip-std">Standard</span>
+          <span class="toggle-summary-role">General Path · balanced</span>
+        </div>
+        <span class="toggle-count">5 models</span>
+        <svg class="toggle-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6,3 11,8 6,13"/>
+        </svg>
+      </summary>
+      <div class="toggle-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Provider</th>
+              <th>Primary Role</th>
+              <th>Strength</th>
+              <th>Recommended Use</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="model-name">qwen3:8b</span></td>
+              <td><span class="provider-tag">Alibaba</span></td>
+              <td>General Path / Accuracy-oriented</td>
+              <td>상대적으로 높은 정확도</td>
+              <td>일반 QA, 정확도 우선 질의</td>
+            </tr>
+            <tr>
+              <td><span class="model-name">Llama 3 8B</span></td>
+              <td><span class="provider-tag">Meta</span></td>
+              <td>General Path</td>
+              <td>균형형 성능, 오픈소스</td>
+              <td>일반 QA, 업무 질의</td>
+            </tr>
+            <tr>
+              <td><span class="model-name">Llama 3.1 8B</span></td>
+              <td><span class="provider-tag">Meta</span></td>
+              <td>General Path</td>
+              <td>균형형 성능, 오픈소스</td>
+              <td>일반 QA, 업무 질의</td>
+            </tr>
+            <tr>
+              <td><span class="model-name">Qwen 2.5 7B/8B</span></td>
+              <td><span class="provider-tag">Alibaba</span></td>
+              <td>General Path</td>
+              <td>균형형 성능, 높은 정확도</td>
+              <td>일반 QA, 업무 질의</td>
+            </tr>
+            <tr>
+              <td><span class="model-name">Mistral 7B</span></td>
+              <td><span class="provider-tag">Mistral AI</span></td>
+              <td>General Path</td>
+              <td>균형형 성능, 효율적</td>
+              <td>일반 QA, 기본 설명</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+
+    <!-- Advanced -->
+    <details class="toggle-tier adv">
+      <summary>
+        <div class="toggle-summary-info">
+          <span class="tier-chip chip-adv">Advanced</span>
+          <span class="toggle-summary-role">Accurate / Escalation Path · high accuracy / reasoning</span>
+        </div>
+        <span class="toggle-count">6 models</span>
+        <svg class="toggle-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6,3 11,8 6,13"/>
+        </svg>
+      </summary>
+      <div class="toggle-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Provider</th>
+              <th>Primary Role</th>
+              <th>Strength</th>
+              <th>Recommended Use</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="model-name">o1</span></td>
+              <td><span class="provider-tag">OpenAI</span></td>
+              <td>Reasoning / Escalation Path</td>
+              <td>고난도 추론, 재검증</td>
+              <td>복합 reasoning, 최종 검증</td>
+            </tr>
+            <tr>
+              <td>
+                <span class="model-name">GPT-4o</span>
+                <div class="model-sub">Advanced · Long Context · Structured</div>
+              </td>
+              <td><span class="provider-tag">OpenAI</span></td>
+              <td>Accurate / Context / Structured Path</td>
+              <td>높은 정확도, 다모달</td>
+              <td>고난도 추론, 문서 QA, SQL 생성</td>
+            </tr>
+            <tr>
+              <td><span class="model-name">Claude 3 Opus</span></td>
+              <td><span class="provider-tag">Anthropic</span></td>
+              <td>Accurate / Escalation Path</td>
+              <td>고난도 추론, 고품질 응답</td>
+              <td>복합 reasoning, 최종 검증</td>
+            </tr>
+            <tr>
+              <td>
+                <span class="model-name">Claude 3.5 Sonnet</span>
+                <div class="model-sub">Advanced · Long Context · Structured</div>
+              </td>
+              <td><span class="provider-tag">Anthropic</span></td>
+              <td>Accurate / Context / Structured Path</td>
+              <td>균형형 고성능, 긴 컨텍스트</td>
+              <td>고난도 추론, 문서 QA, SQL 생성</td>
+            </tr>
+            <tr>
+              <td><span class="model-name">Llama 3.1 405B</span></td>
+              <td><span class="provider-tag">Meta</span></td>
+              <td>Accurate / Escalation Path</td>
+              <td>오픈소스 초대형 모델, 높은 정확도</td>
+              <td>최종 검증, Escalation</td>
+            </tr>
+            <tr>
+              <td><span class="model-name">Qwen 2.5 72B</span></td>
+              <td><span class="provider-tag">Alibaba</span></td>
+              <td>Accurate / Escalation Path</td>
+              <td>오픈소스 고성능</td>
+              <td>고난도 추론, 정책 QA</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+
+    <!-- Long Context -->
+    <details class="toggle-tier ctx">
+      <summary>
+        <div class="toggle-summary-info">
+          <span class="tier-chip chip-ctx">Long Context</span>
+          <span class="toggle-summary-role">Context Path · long context handling</span>
+        </div>
+        <span class="toggle-count">5 models</span>
+        <svg class="toggle-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6,3 11,8 6,13"/>
+        </svg>
+      </summary>
+      <div class="toggle-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Provider</th>
+              <th>Primary Role</th>
+              <th>Strength</th>
+              <th>Recommended Use</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="model-name">Kimi</span></td>
+              <td><span class="provider-tag">Moonshot AI</span></td>
+              <td>Context Path</td>
+              <td>초장문 컨텍스트 처리</td>
+              <td>긴 문서 QA, RAG</td>
+            </tr>
+            <tr>
+              <td><span class="model-name">Gemini 1.5 Pro</span></td>
+              <td><span class="provider-tag">Google</span></td>
+              <td>Context Path</td>
+              <td>장문 컨텍스트 (최대 2M)</td>
+              <td>문서 QA, RAG, 회의록 분석</td>
+            </tr>
+            <tr>
+              <td>
+                <span class="model-name">Claude 3.5 Sonnet</span>
+                <div class="model-sub">Advanced · Long Context · Structured</div>
+              </td>
+              <td><span class="provider-tag">Anthropic</span></td>
+              <td>Context / Accurate Path</td>
+              <td>균형형 고성능, 긴 컨텍스트</td>
+              <td>문서 QA, RAG, 고난도 추론</td>
+            </tr>
+            <tr>
+              <td><span class="model-name">Qwen Long</span></td>
+              <td><span class="provider-tag">Alibaba</span></td>
+              <td>Context Path</td>
+              <td>장문 처리 특화</td>
+              <td>긴 문서 요약, RAG</td>
+            </tr>
+            <tr>
+              <td>
+                <span class="model-name">GPT-4o</span>
+                <div class="model-sub">Advanced · Long Context · Structured</div>
+              </td>
+              <td><span class="provider-tag">OpenAI</span></td>
+              <td>Context / Accurate Path</td>
+              <td>높은 정확도, 다모달</td>
+              <td>문서 QA, RAG, 고난도 추론</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+
+    <!-- Structured -->
+    <details class="toggle-tier str">
+      <summary>
+        <div class="toggle-summary-info">
+          <span class="tier-chip chip-str">Structured</span>
+          <span class="toggle-summary-role">Structured Output Path · format stability</span>
+        </div>
+        <span class="toggle-count">4 models</span>
+        <svg class="toggle-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6,3 11,8 6,13"/>
+        </svg>
+      </summary>
+      <div class="toggle-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Provider</th>
+              <th>Primary Role</th>
+              <th>Strength</th>
+              <th>Recommended Use</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <span class="model-name">GPT-4o</span>
+                <div class="model-sub">Advanced · Long Context · Structured</div>
+              </td>
+              <td><span class="provider-tag">OpenAI</span></td>
+              <td>Structured / Accurate Path</td>
+              <td>높은 정확도, 다모달</td>
+              <td>SQL/JSON 생성, 고난도 추론</td>
+            </tr>
+            <tr>
+              <td>
+                <span class="model-name">Claude 3.5 Sonnet</span>
+                <div class="model-sub">Advanced · Long Context · Structured</div>
+              </td>
+              <td><span class="provider-tag">Anthropic</span></td>
+              <td>Structured / Accurate Path</td>
+              <td>균형형 고성능, 출력 형식 안정성</td>
+              <td>SQL/JSON 생성, 문서 QA</td>
+            </tr>
+            <tr>
+              <td><span class="model-name">Qwen 2.5 Coder</span></td>
+              <td><span class="provider-tag">Alibaba</span></td>
+              <td>Structured Output Path</td>
+              <td>코드·SQL 특화</td>
+              <td>SQL/JSON 생성, 코드 출력</td>
+            </tr>
+            <tr>
+              <td><span class="model-name">DeepSeek Coder</span></td>
+              <td><span class="provider-tag">DeepSeek</span></td>
+              <td>Structured Output Path</td>
+              <td>코드 특화, 고성능</td>
+              <td>SQL/JSON 생성</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+
+  </section>
+
+  <!-- ④ 서비스 기능별 권장 Tier -->
+  <section>
+    <h2>서비스 기능별 권장 Tier</h2>
+    <div class="svc-grid">
+      <div class="svc-card">
+        <div class="svc-name">일반 FAQ</div>
+        <div class="svc-row">Tier: <span class="tier-chip chip-light" style="font-size:0.68rem;padding:2px 8px">Lightweight</span></div>
+        <div class="svc-row">요구사항: <span>빠른 응답</span></div>
+        <div class="svc-row">핵심 지표: <span>Accuracy, Latency</span></div>
+      </div>
+      <div class="svc-card">
+        <div class="svc-name">실시간 운영 챗봇</div>
+        <div class="svc-row">Tier: <span class="tier-chip chip-light" style="font-size:0.68rem;padding:2px 8px">Lightweight</span></div>
+        <div class="svc-row">요구사항: <span>SLA 우선</span></div>
+        <div class="svc-row">핵심 지표: <span>p95 Latency, Timeout Rate</span></div>
+      </div>
+      <div class="svc-card">
+        <div class="svc-name">일반 업무 QA</div>
+        <div class="svc-row">Tier: <span class="tier-chip chip-std" style="font-size:0.68rem;padding:2px 8px">Standard</span></div>
+        <div class="svc-row">요구사항: <span>균형형 응답</span></div>
+        <div class="svc-row">핵심 지표: <span>Accuracy, Latency, Human Review</span></div>
+      </div>
+      <div class="svc-card">
+        <div class="svc-name">정책 / 규정 QA</div>
+        <div class="svc-row">Tier: <span class="tier-chip chip-adv" style="font-size:0.68rem;padding:2px 8px">Advanced</span></div>
+        <div class="svc-row">요구사항: <span>정확도 우선</span></div>
+        <div class="svc-row">핵심 지표: <span>Groundedness, Accuracy</span></div>
+      </div>
+      <div class="svc-card">
+        <div class="svc-name">보고서 생성</div>
+        <div class="svc-row">Tier: <span class="tier-chip chip-adv" style="font-size:0.68rem;padding:2px 8px">Advanced</span></div>
+        <div class="svc-row">요구사항: <span>긴 reasoning</span></div>
+        <div class="svc-row">핵심 지표: <span>Completeness, Output Quality, Human Review</span></div>
+      </div>
+      <div class="svc-card">
+        <div class="svc-name">SQL / JSON 생성</div>
+        <div class="svc-row">Tier: <span class="tier-chip chip-str" style="font-size:0.68rem;padding:2px 8px">Structured</span></div>
+        <div class="svc-row">요구사항: <span>구조화 출력</span></div>
+        <div class="svc-row">핵심 지표: <span>Parse Success, Format Validation</span></div>
+      </div>
+      <div class="svc-card">
+        <div class="svc-name">문서 요약</div>
+        <div class="svc-row">Tier: <span><span class="tier-chip chip-std" style="font-size:0.68rem;padding:2px 8px">Standard</span> / <span class="tier-chip chip-adv" style="font-size:0.68rem;padding:2px 8px">Advanced</span></span></div>
+        <div class="svc-row">요구사항: <span>긴 출력 처리</span></div>
+        <div class="svc-row">핵심 지표: <span>Coverage, Summary Quality</span></div>
+      </div>
+      <div class="svc-card">
+        <div class="svc-name">RAG 기반 문서 QA</div>
+        <div class="svc-row">Tier: <span class="tier-chip chip-ctx" style="font-size:0.68rem;padding:2px 8px">Long Context</span></div>
+        <div class="svc-row">요구사항: <span>긴 문맥</span></div>
+        <div class="svc-row">핵심 지표: <span>Retrieval Hit Rate, Groundedness</span></div>
+      </div>
+      <div class="svc-card">
+        <div class="svc-name">회의록 분석</div>
+        <div class="svc-row">Tier: <span class="tier-chip chip-ctx" style="font-size:0.68rem;padding:2px 8px">Long Context</span></div>
+        <div class="svc-row">요구사항: <span>context 유지</span></div>
+        <div class="svc-row">핵심 지표: <span>Extraction Accuracy, Context Validation</span></div>
+      </div>
+      <div class="svc-card">
+        <div class="svc-name">재검증 요청</div>
+        <div class="svc-row">Tier: <span class="tier-chip chip-adv" style="font-size:0.68rem;padding:2px 8px">Advanced</span></div>
+        <div class="svc-row">요구사항: <span>신뢰성 확보</span></div>
+        <div class="svc-row">핵심 지표: <span>Reliability, Correction Rate</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ⑤ Routing Rules -->
+  <section>
+    <h2>Routing Rules</h2>
+    <div class="rules-grid">
+      <div class="rule-card">
+        <div class="rule-id">R-01</div>
+        <div class="rule-body">
+          <div class="rule-cond">일반 FAQ / 단순 질의</div>
+          <div class="rule-route"><span class="tier-chip chip-light" style="font-size:0.68rem;padding:2px 8px">Lightweight Path</span></div>
+          <div class="rule-opt">즉시 응답</div>
+        </div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-id">R-02</div>
+        <div class="rule-body">
+          <div class="rule-cond">SLA / 실시간 응답 필요</div>
+          <div class="rule-route"><span class="tier-chip chip-light" style="font-size:0.68rem;padding:2px 8px">Lightweight Path</span></div>
+          <div class="rule-opt">p95 latency 모니터링</div>
+        </div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-id">R-03</div>
+        <div class="rule-body">
+          <div class="rule-cond">일반 업무 질의</div>
+          <div class="rule-route"><span class="tier-chip chip-std" style="font-size:0.68rem;padding:2px 8px">Standard Path</span></div>
+          <div class="rule-opt">기본 응답</div>
+        </div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-id">R-04</div>
+        <div class="rule-body">
+          <div class="rule-cond">정확도 우선 요청</div>
+          <div class="rule-route"><span class="tier-chip chip-adv" style="font-size:0.68rem;padding:2px 8px">Advanced Path</span></div>
+          <div class="rule-opt">Timeout guard 적용</div>
+        </div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-id">R-05</div>
+        <div class="rule-body">
+          <div class="rule-cond">고난도 추론 / 복합 reasoning</div>
+          <div class="rule-route"><span class="tier-chip chip-adv" style="font-size:0.68rem;padding:2px 8px">Advanced Path</span></div>
+          <div class="rule-opt">Reasoning 우선</div>
+        </div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-id">R-06</div>
+        <div class="rule-body">
+          <div class="rule-cond">긴 문서 기반 QA</div>
+          <div class="rule-route"><span class="tier-chip chip-ctx" style="font-size:0.68rem;padding:2px 8px">Long Context Path</span></div>
+          <div class="rule-opt">Context 유지</div>
+        </div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-id">R-07</div>
+        <div class="rule-body">
+          <div class="rule-cond">SQL / JSON 생성</div>
+          <div class="rule-route"><span class="tier-chip chip-str" style="font-size:0.68rem;padding:2px 8px">Structured Path</span></div>
+          <div class="rule-opt">Format validation</div>
+        </div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-id">R-08</div>
+        <div class="rule-body">
+          <div class="rule-cond">출력량 과다 예상</div>
+          <div class="rule-route" style="color:var(--muted)">Token-Control Path</div>
+          <div class="rule-opt">max_tokens 적용</div>
+        </div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-id">R-09</div>
+        <div class="rule-body">
+          <div class="rule-cond">timeout 발생</div>
+          <div class="rule-route" style="color:#f87171">Fallback Path</div>
+          <div class="rule-opt">대체 모델 호출</div>
+        </div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-id">R-10</div>
+        <div class="rule-body">
+          <div class="rule-cond">parse fail 발생</div>
+          <div class="rule-route" style="color:#fbbf24">Retry Path</div>
+          <div class="rule-opt">strict prompt 재시도</div>
+        </div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-id">R-11</div>
+        <div class="rule-body">
+          <div class="rule-cond">신뢰도 낮음 / 재검증 필요</div>
+          <div class="rule-route" style="color:var(--accent-adv)">Escalation Path</div>
+          <div class="rule-opt">Advanced Tier 재검증</div>
+        </div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-id">R-12</div>
+        <div class="rule-body">
+          <div class="rule-cond">API 실패</div>
+          <div class="rule-route" style="color:#f87171">Fallback Path</div>
+          <div class="rule-opt">대체 모델 호출</div>
+        </div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-id">R-13</div>
+        <div class="rule-body">
+          <div class="rule-cond">모델 성능 차이 미미</div>
+          <div class="rule-route" style="color:#34d399">Efficiency Path</div>
+          <div class="rule-opt">latency / cost 우선 선택</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <div class="container">
+    <p>Hybrid LLM Routing Policy v1.0 &nbsp;·&nbsp; 2026-05-22 &nbsp;·&nbsp; Rule-based · Local / On-prem / API</p>
+  </div>
+</footer>
+
+</body>
+</html>
