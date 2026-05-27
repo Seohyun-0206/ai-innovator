@@ -208,6 +208,107 @@
       header h1 { font-size: 1.4rem; }
       .container { padding: 0 16px; }
     }
+
+    /* ── Clickable svc-card ── */
+    .svc-card { cursor: pointer; transition: transform 0.15s, border-color 0.15s; }
+    .svc-card:hover { transform: translateY(-2px); border-color: #4a5568; }
+    .svc-hint { font-size: 0.72rem; color: #64748b; margin-top: 10px; text-align: right; transition: color 0.15s; }
+    .svc-card:hover .svc-hint { color: var(--accent-light); }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.72);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 640px;
+      max-height: 85vh;
+      overflow-y: auto;
+      display: none;
+    }
+    .modal.active { display: block; }
+    .modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--surface);
+      z-index: 1;
+      border-radius: 16px 16px 0 0;
+    }
+    .modal-title { font-size: 1.05rem; font-weight: 700; }
+    .modal-subtitle { font-size: 0.72rem; color: var(--muted); margin-bottom: 4px; }
+    .modal-close {
+      width: 28px; height: 28px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+      margin-left: 12px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .modal-close:hover { background: #2e3248; color: var(--text); }
+    .modal-body { padding: 20px 24px 24px; }
+    .modal-section { margin-bottom: 22px; }
+    .modal-section:last-child { margin-bottom: 0; }
+    .modal-section-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--muted);
+      margin-bottom: 10px;
+      border-left: 2px solid #4a5568;
+      padding-left: 8px;
+    }
+    .modal-info-table { width: 100%; font-size: 0.82rem; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; border-collapse: collapse; }
+    .modal-info-table th { background: var(--surface2); padding: 8px 14px; text-align: left; font-size: 0.72rem; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); }
+    .modal-info-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: #94a3b8; }
+    .modal-info-table tr:last-child td { border-bottom: none; }
+    .modal-info-table td:first-child { color: var(--text); font-weight: 500; width: 40%; }
+    .validation-grid { display: flex; flex-direction: column; gap: 8px; }
+    .validation-row { display: flex; gap: 12px; align-items: flex-start; font-size: 0.82rem; }
+    .validation-label { color: var(--muted); min-width: 100px; flex-shrink: 0; padding-top: 1px; font-size: 0.78rem; }
+    .validation-value { color: #94a3b8; }
+    .metric-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+    .metric-chip { font-size: 0.7rem; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 3px 8px; color: #94a3b8; font-family: 'Cascadia Code', monospace; }
+    .prompt-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .prompt-textarea {
+      width: 100%;
+      min-height: 120px;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      font-size: 0.8rem;
+      line-height: 1.65;
+      resize: vertical;
+      padding: 12px 14px;
+    }
+    .prompt-textarea::placeholder { color: #4a5568; }
+    .prompt-actions { display: flex; justify-content: flex-end; padding: 8px 12px; border-top: 1px solid var(--border); background: rgba(0,0,0,0.15); }
+    .btn-copy { font-size: 0.75rem; padding: 5px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; color: var(--muted); cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+    .btn-copy:hover { background: #2e3248; color: var(--text); }
+    .btn-copy.copied { color: var(--accent-std); border-color: var(--accent-std); }
   </style>
 </head>
 <body>
@@ -696,65 +797,75 @@
   <section>
     <h2>서비스 기능별 권장 Tier</h2>
     <div class="svc-grid">
-      <div class="svc-card">
+      <div class="svc-card" onclick="openModal('faq')">
         <div class="svc-name">일반 FAQ</div>
         <div class="svc-row">Tier: <span class="tier-chip chip-light" style="font-size:0.68rem;padding:2px 8px">Lightweight</span></div>
         <div class="svc-row">요구사항: <span>빠른 응답</span></div>
         <div class="svc-row">핵심 지표: <span>Accuracy, Latency</span></div>
+        <div class="svc-hint">상세 보기 →</div>
       </div>
-      <div class="svc-card">
+      <div class="svc-card" onclick="openModal('chatbot')">
         <div class="svc-name">실시간 운영 챗봇</div>
         <div class="svc-row">Tier: <span class="tier-chip chip-light" style="font-size:0.68rem;padding:2px 8px">Lightweight</span></div>
         <div class="svc-row">요구사항: <span>SLA 우선</span></div>
         <div class="svc-row">핵심 지표: <span>p95 Latency, Timeout Rate</span></div>
+        <div class="svc-hint">상세 보기 →</div>
       </div>
-      <div class="svc-card">
+      <div class="svc-card" onclick="openModal('work-qa')">
         <div class="svc-name">일반 업무 QA</div>
         <div class="svc-row">Tier: <span class="tier-chip chip-std" style="font-size:0.68rem;padding:2px 8px">Standard</span></div>
         <div class="svc-row">요구사항: <span>균형형 응답</span></div>
         <div class="svc-row">핵심 지표: <span>Accuracy, Latency, Human Review</span></div>
+        <div class="svc-hint">상세 보기 →</div>
       </div>
-      <div class="svc-card">
+      <div class="svc-card" onclick="openModal('policy-qa')">
         <div class="svc-name">정책 / 규정 QA</div>
         <div class="svc-row">Tier: <span class="tier-chip chip-adv" style="font-size:0.68rem;padding:2px 8px">Advanced</span></div>
         <div class="svc-row">요구사항: <span>정확도 우선</span></div>
         <div class="svc-row">핵심 지표: <span>Groundedness, Accuracy</span></div>
+        <div class="svc-hint">상세 보기 →</div>
       </div>
-      <div class="svc-card">
+      <div class="svc-card" onclick="openModal('report')">
         <div class="svc-name">보고서 생성</div>
         <div class="svc-row">Tier: <span class="tier-chip chip-adv" style="font-size:0.68rem;padding:2px 8px">Advanced</span></div>
         <div class="svc-row">요구사항: <span>긴 reasoning</span></div>
         <div class="svc-row">핵심 지표: <span>Completeness, Output Quality, Human Review</span></div>
+        <div class="svc-hint">상세 보기 →</div>
       </div>
-      <div class="svc-card">
+      <div class="svc-card" onclick="openModal('sql')">
         <div class="svc-name">SQL / JSON 생성</div>
         <div class="svc-row">Tier: <span class="tier-chip chip-str" style="font-size:0.68rem;padding:2px 8px">Structured</span></div>
         <div class="svc-row">요구사항: <span>구조화 출력</span></div>
         <div class="svc-row">핵심 지표: <span>Parse Success, Format Validation</span></div>
+        <div class="svc-hint">상세 보기 →</div>
       </div>
-      <div class="svc-card">
+      <div class="svc-card" onclick="openModal('summary')">
         <div class="svc-name">문서 요약</div>
         <div class="svc-row">Tier: <span><span class="tier-chip chip-std" style="font-size:0.68rem;padding:2px 8px">Standard</span> / <span class="tier-chip chip-adv" style="font-size:0.68rem;padding:2px 8px">Advanced</span></span></div>
         <div class="svc-row">요구사항: <span>긴 출력 처리</span></div>
         <div class="svc-row">핵심 지표: <span>Coverage, Summary Quality</span></div>
+        <div class="svc-hint">상세 보기 →</div>
       </div>
-      <div class="svc-card">
+      <div class="svc-card" onclick="openModal('rag')">
         <div class="svc-name">RAG 기반 문서 QA</div>
         <div class="svc-row">Tier: <span class="tier-chip chip-ctx" style="font-size:0.68rem;padding:2px 8px">Long Context</span></div>
         <div class="svc-row">요구사항: <span>긴 문맥</span></div>
         <div class="svc-row">핵심 지표: <span>Retrieval Hit Rate, Groundedness</span></div>
+        <div class="svc-hint">상세 보기 →</div>
       </div>
-      <div class="svc-card">
+      <div class="svc-card" onclick="openModal('minutes')">
         <div class="svc-name">회의록 분석</div>
         <div class="svc-row">Tier: <span class="tier-chip chip-ctx" style="font-size:0.68rem;padding:2px 8px">Long Context</span></div>
         <div class="svc-row">요구사항: <span>context 유지</span></div>
         <div class="svc-row">핵심 지표: <span>Extraction Accuracy, Context Validation</span></div>
+        <div class="svc-hint">상세 보기 →</div>
       </div>
-      <div class="svc-card">
+      <div class="svc-card" onclick="openModal('revalidation')">
         <div class="svc-name">재검증 요청</div>
         <div class="svc-row">Tier: <span class="tier-chip chip-adv" style="font-size:0.68rem;padding:2px 8px">Advanced</span></div>
         <div class="svc-row">요구사항: <span>신뢰성 확보</span></div>
         <div class="svc-row">핵심 지표: <span>Reliability, Correction Rate</span></div>
+        <div class="svc-hint">상세 보기 →</div>
       </div>
     </div>
   </section>
@@ -878,5 +989,448 @@
   </div>
 </footer>
 
+
+<!-- ── Modals ── -->
+<div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
+
+  <!-- 일반 FAQ -->
+  <div class="modal" id="modal-faq" style="border-top:3px solid var(--accent-light);">
+    <div class="modal-header">
+      <div><div class="modal-subtitle">서비스 기능 · Lightweight Tier</div><div class="modal-title">일반 FAQ</div></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-title">테스트 케이스 유형</div>
+        <table class="modal-info-table"><thead><tr><th>유형</th><th>목적</th></tr></thead><tbody><tr><td>단순 질의응답</td><td>빠른 응답 및 기본 정확도 확인</td></tr></tbody></table>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">검증 기준</div>
+        <div class="validation-grid">
+          <div class="validation-row"><span class="validation-label">우선 고려 요소</span><span class="validation-value">Latency</span></div>
+          <div class="validation-row"><span class="validation-label">주요 검증 기준</span><span class="validation-value">빠른 응답 및 기본 정확도</span></div>
+          <div class="validation-row"><span class="validation-label">핵심 지표</span><div class="metric-chips"><span class="metric-chip">Accuracy</span><span class="metric-chip">Latency</span></div></div>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">테스트 케이스 생성 프롬프트</div>
+        <div class="prompt-box">
+          <textarea class="prompt-textarea" id="prompt-faq" placeholder="테스트 케이스 생성 프롬프트를 작성하세요...">서비스 기능: 일반 FAQ
+테스트 케이스 유형: 단순 질의응답
+핵심 지표: Accuracy, Latency
+
+아래 형식으로 테스트 케이스 5개를 생성해주세요.
+
+[TC-N]
+입력 질문:
+예상 응답:
+평가 기준: Accuracy ≥ 0.85 / Latency ≤ 1,000ms
+통과 조건:</textarea>
+          <div class="prompt-actions"><button class="btn-copy" onclick="copyPrompt('prompt-faq', this)">복사</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 실시간 운영 챗봇 -->
+  <div class="modal" id="modal-chatbot" style="border-top:3px solid var(--accent-light);">
+    <div class="modal-header">
+      <div><div class="modal-subtitle">서비스 기능 · Lightweight Tier</div><div class="modal-title">실시간 운영 챗봇</div></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-title">테스트 케이스 유형</div>
+        <table class="modal-info-table"><thead><tr><th>유형</th><th>목적</th></tr></thead><tbody><tr><td>짧은 운영 질의</td><td>SLA 및 latency 검증</td></tr></tbody></table>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">검증 기준</div>
+        <div class="validation-grid">
+          <div class="validation-row"><span class="validation-label">우선 고려 요소</span><span class="validation-value">SLA</span></div>
+          <div class="validation-row"><span class="validation-label">주요 검증 기준</span><span class="validation-value">timeout 및 응답 안정성</span></div>
+          <div class="validation-row"><span class="validation-label">핵심 지표</span><div class="metric-chips"><span class="metric-chip">p95 Latency</span><span class="metric-chip">Timeout Rate</span></div></div>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">테스트 케이스 생성 프롬프트</div>
+        <div class="prompt-box">
+          <textarea class="prompt-textarea" id="prompt-chatbot" placeholder="테스트 케이스 생성 프롬프트를 작성하세요...">서비스 기능: 실시간 운영 챗봇
+테스트 케이스 유형: 짧은 운영 질의
+핵심 지표: p95 Latency, Timeout Rate
+
+아래 형식으로 테스트 케이스 5개를 생성해주세요.
+
+[TC-N]
+입력 질의:
+SLA 기준 응답 시간: ≤ ??ms
+평가 기준: p95 Latency / Timeout Rate ≤ ??%
+통과 조건:</textarea>
+          <div class="prompt-actions"><button class="btn-copy" onclick="copyPrompt('prompt-chatbot', this)">복사</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 일반 업무 QA -->
+  <div class="modal" id="modal-work-qa" style="border-top:3px solid var(--accent-std);">
+    <div class="modal-header">
+      <div><div class="modal-subtitle">서비스 기능 · Standard Tier</div><div class="modal-title">일반 업무 QA</div></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-title">테스트 케이스 유형</div>
+        <table class="modal-info-table"><thead><tr><th>유형</th><th>목적</th></tr></thead><tbody><tr><td>일반 업무 설명</td><td>균형형 응답 품질 검증</td></tr></tbody></table>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">검증 기준</div>
+        <div class="validation-grid">
+          <div class="validation-row"><span class="validation-label">우선 고려 요소</span><span class="validation-value">Balanced</span></div>
+          <div class="validation-row"><span class="validation-label">주요 검증 기준</span><span class="validation-value">정확도 및 응답 품질</span></div>
+          <div class="validation-row"><span class="validation-label">핵심 지표</span><div class="metric-chips"><span class="metric-chip">Accuracy</span><span class="metric-chip">Latency</span><span class="metric-chip">Human Review</span></div></div>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">테스트 케이스 생성 프롬프트</div>
+        <div class="prompt-box">
+          <textarea class="prompt-textarea" id="prompt-work-qa" placeholder="테스트 케이스 생성 프롬프트를 작성하세요...">서비스 기능: 일반 업무 QA
+테스트 케이스 유형: 일반 업무 설명
+핵심 지표: Accuracy, Latency, Human Review
+
+아래 형식으로 테스트 케이스 5개를 생성해주세요.
+
+[TC-N]
+입력 질문:
+예상 응답:
+평가 기준: Accuracy ≥ ?? / Latency ≤ ??ms / Human Review ≥ ??점
+통과 조건:</textarea>
+          <div class="prompt-actions"><button class="btn-copy" onclick="copyPrompt('prompt-work-qa', this)">복사</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 정책/규정 QA -->
+  <div class="modal" id="modal-policy-qa" style="border-top:3px solid var(--accent-adv);">
+    <div class="modal-header">
+      <div><div class="modal-subtitle">서비스 기능 · Advanced Tier</div><div class="modal-title">정책 / 규정 QA</div></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-title">테스트 케이스 유형</div>
+        <table class="modal-info-table"><thead><tr><th>유형</th><th>목적</th></tr></thead><tbody><tr><td>근거 기반 질의</td><td>정확도 및 hallucination 최소화</td></tr></tbody></table>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">검증 기준</div>
+        <div class="validation-grid">
+          <div class="validation-row"><span class="validation-label">우선 고려 요소</span><span class="validation-value">Accuracy</span></div>
+          <div class="validation-row"><span class="validation-label">주요 검증 기준</span><span class="validation-value">근거 기반 정확도</span></div>
+          <div class="validation-row"><span class="validation-label">핵심 지표</span><div class="metric-chips"><span class="metric-chip">Groundedness</span><span class="metric-chip">Accuracy</span></div></div>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">테스트 케이스 생성 프롬프트</div>
+        <div class="prompt-box">
+          <textarea class="prompt-textarea" id="prompt-policy-qa" placeholder="테스트 케이스 생성 프롬프트를 작성하세요...">서비스 기능: 정책/규정 QA
+테스트 케이스 유형: 근거 기반 질의
+핵심 지표: Groundedness, Accuracy
+
+아래 형식으로 테스트 케이스 5개를 생성해주세요.
+
+[TC-N]
+입력 질문:
+참조 문서/근거:
+예상 응답:
+평가 기준: Groundedness ≥ ?? / Accuracy ≥ ??
+통과 조건:</textarea>
+          <div class="prompt-actions"><button class="btn-copy" onclick="copyPrompt('prompt-policy-qa', this)">복사</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 보고서 생성 -->
+  <div class="modal" id="modal-report" style="border-top:3px solid var(--accent-adv);">
+    <div class="modal-header">
+      <div><div class="modal-subtitle">서비스 기능 · Advanced Tier</div><div class="modal-title">보고서 생성</div></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-title">테스트 케이스 유형</div>
+        <table class="modal-info-table"><thead><tr><th>유형</th><th>목적</th></tr></thead><tbody><tr><td>긴 응답 생성</td><td>reasoning 및 응답 품질 검증</td></tr></tbody></table>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">검증 기준</div>
+        <div class="validation-grid">
+          <div class="validation-row"><span class="validation-label">우선 고려 요소</span><span class="validation-value">Reasoning</span></div>
+          <div class="validation-row"><span class="validation-label">주요 검증 기준</span><span class="validation-value">논리 흐름 및 응답 품질</span></div>
+          <div class="validation-row"><span class="validation-label">핵심 지표</span><div class="metric-chips"><span class="metric-chip">Completeness</span><span class="metric-chip">Output Quality</span><span class="metric-chip">Human Review</span></div></div>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">테스트 케이스 생성 프롬프트</div>
+        <div class="prompt-box">
+          <textarea class="prompt-textarea" id="prompt-report" placeholder="테스트 케이스 생성 프롬프트를 작성하세요...">서비스 기능: 보고서 생성
+테스트 케이스 유형: 긴 응답 생성
+핵심 지표: Completeness, Output Quality, Human Review
+
+아래 형식으로 테스트 케이스 5개를 생성해주세요.
+
+[TC-N]
+입력 조건:
+예상 출력 구조:
+평가 기준: Completeness ≥ ?? / Output Quality ≥ ??점 / Human Review ≥ ??점
+통과 조건:</textarea>
+          <div class="prompt-actions"><button class="btn-copy" onclick="copyPrompt('prompt-report', this)">복사</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SQL/JSON 생성 -->
+  <div class="modal" id="modal-sql" style="border-top:3px solid var(--accent-str);">
+    <div class="modal-header">
+      <div><div class="modal-subtitle">서비스 기능 · Structured Tier</div><div class="modal-title">SQL / JSON 생성</div></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-title">테스트 케이스 유형</div>
+        <table class="modal-info-table"><thead><tr><th>유형</th><th>목적</th></tr></thead><tbody><tr><td>구조화 출력 요청</td><td>format 안정성 검증</td></tr></tbody></table>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">검증 기준</div>
+        <div class="validation-grid">
+          <div class="validation-row"><span class="validation-label">우선 고려 요소</span><span class="validation-value">Structured Output</span></div>
+          <div class="validation-row"><span class="validation-label">주요 검증 기준</span><span class="validation-value">형식 안정성 및 실행 가능성</span></div>
+          <div class="validation-row"><span class="validation-label">핵심 지표</span><div class="metric-chips"><span class="metric-chip">Parse Success</span><span class="metric-chip">Format Validation</span></div></div>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">테스트 케이스 생성 프롬프트</div>
+        <div class="prompt-box">
+          <textarea class="prompt-textarea" id="prompt-sql" placeholder="테스트 케이스 생성 프롬프트를 작성하세요...">서비스 기능: SQL/JSON 생성
+테스트 케이스 유형: 구조화 출력 요청
+핵심 지표: Parse Success, Format Validation
+
+아래 형식으로 테스트 케이스 5개를 생성해주세요.
+
+[TC-N]
+입력 요청:
+출력 형식 (SQL / JSON Schema):
+예상 출력:
+평가 기준: Parse Success = 100% / Format Validation 통과
+통과 조건:</textarea>
+          <div class="prompt-actions"><button class="btn-copy" onclick="copyPrompt('prompt-sql', this)">복사</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 문서 요약 -->
+  <div class="modal" id="modal-summary" style="border-top:3px solid var(--accent-std);">
+    <div class="modal-header">
+      <div><div class="modal-subtitle">서비스 기능 · Standard / Advanced Tier</div><div class="modal-title">문서 요약</div></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-title">테스트 케이스 유형</div>
+        <table class="modal-info-table"><thead><tr><th>유형</th><th>목적</th></tr></thead><tbody><tr><td>긴 문서 입력</td><td>긴 출력 및 요약 품질 검증</td></tr></tbody></table>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">검증 기준</div>
+        <div class="validation-grid">
+          <div class="validation-row"><span class="validation-label">우선 고려 요소</span><span class="validation-value">Balanced</span></div>
+          <div class="validation-row"><span class="validation-label">주요 검증 기준</span><span class="validation-value">핵심 내용 유지 여부</span></div>
+          <div class="validation-row"><span class="validation-label">핵심 지표</span><div class="metric-chips"><span class="metric-chip">Coverage</span><span class="metric-chip">Summary Quality</span></div></div>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">테스트 케이스 생성 프롬프트</div>
+        <div class="prompt-box">
+          <textarea class="prompt-textarea" id="prompt-summary" placeholder="테스트 케이스 생성 프롬프트를 작성하세요...">서비스 기능: 문서 요약
+테스트 케이스 유형: 긴 문서 입력
+핵심 지표: Coverage, Summary Quality
+
+아래 형식으로 테스트 케이스 5개를 생성해주세요.
+
+[TC-N]
+입력 문서 유형 (길이/분야):
+요약 범위/형식:
+예상 요약 결과:
+평가 기준: Coverage ≥ ?? / Summary Quality ≥ ??점
+통과 조건:</textarea>
+          <div class="prompt-actions"><button class="btn-copy" onclick="copyPrompt('prompt-summary', this)">복사</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RAG 기반 문서 QA -->
+  <div class="modal" id="modal-rag" style="border-top:3px solid var(--accent-ctx);">
+    <div class="modal-header">
+      <div><div class="modal-subtitle">서비스 기능 · Long Context Tier</div><div class="modal-title">RAG 기반 문서 QA</div></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-title">테스트 케이스 유형</div>
+        <table class="modal-info-table"><thead><tr><th>유형</th><th>목적</th></tr></thead><tbody><tr><td>문서 기반 질의</td><td>retrieval 및 groundedness 검증</td></tr></tbody></table>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">검증 기준</div>
+        <div class="validation-grid">
+          <div class="validation-row"><span class="validation-label">우선 고려 요소</span><span class="validation-value">Context 유지</span></div>
+          <div class="validation-row"><span class="validation-label">주요 검증 기준</span><span class="validation-value">문서 기반 응답 여부</span></div>
+          <div class="validation-row"><span class="validation-label">핵심 지표</span><div class="metric-chips"><span class="metric-chip">Retrieval Hit Rate</span><span class="metric-chip">Groundedness</span></div></div>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">테스트 케이스 생성 프롬프트</div>
+        <div class="prompt-box">
+          <textarea class="prompt-textarea" id="prompt-rag" placeholder="테스트 케이스 생성 프롬프트를 작성하세요...">서비스 기능: RAG 기반 문서 QA
+테스트 케이스 유형: 문서 기반 질의
+핵심 지표: Retrieval Hit Rate, Groundedness
+
+아래 형식으로 테스트 케이스 5개를 생성해주세요.
+
+[TC-N]
+입력 질문:
+참조 문서 (범위):
+예상 응답:
+평가 기준: Retrieval Hit Rate ≥ ?? / Groundedness ≥ ??
+통과 조건:</textarea>
+          <div class="prompt-actions"><button class="btn-copy" onclick="copyPrompt('prompt-rag', this)">복사</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 회의록 분석 -->
+  <div class="modal" id="modal-minutes" style="border-top:3px solid var(--accent-ctx);">
+    <div class="modal-header">
+      <div><div class="modal-subtitle">서비스 기능 · Long Context Tier</div><div class="modal-title">회의록 분석</div></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-title">테스트 케이스 유형</div>
+        <table class="modal-info-table"><thead><tr><th>유형</th><th>목적</th></tr></thead><tbody><tr><td>긴 context 입력</td><td>문맥 유지 및 정보 추출 검증</td></tr></tbody></table>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">검증 기준</div>
+        <div class="validation-grid">
+          <div class="validation-row"><span class="validation-label">우선 고려 요소</span><span class="validation-value">Context 유지</span></div>
+          <div class="validation-row"><span class="validation-label">주요 검증 기준</span><span class="validation-value">긴 문맥 유지 및 정보 추출</span></div>
+          <div class="validation-row"><span class="validation-label">핵심 지표</span><div class="metric-chips"><span class="metric-chip">Extraction Accuracy</span><span class="metric-chip">Context Validation</span></div></div>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">테스트 케이스 생성 프롬프트</div>
+        <div class="prompt-box">
+          <textarea class="prompt-textarea" id="prompt-minutes" placeholder="테스트 케이스 생성 프롬프트를 작성하세요...">서비스 기능: 회의록 분석
+테스트 케이스 유형: 긴 context 입력
+핵심 지표: Extraction Accuracy, Context Validation
+
+아래 형식으로 테스트 케이스 5개를 생성해주세요.
+
+[TC-N]
+입력 (회의록 길이/형태):
+추출 대상 정보 (Action Item 등):
+예상 추출 결과:
+평가 기준: Extraction Accuracy ≥ ?? / Context Validation 통과
+통과 조건:</textarea>
+          <div class="prompt-actions"><button class="btn-copy" onclick="copyPrompt('prompt-minutes', this)">복사</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 재검증 요청 -->
+  <div class="modal" id="modal-revalidation" style="border-top:3px solid var(--accent-adv);">
+    <div class="modal-header">
+      <div><div class="modal-subtitle">서비스 기능 · Advanced Tier</div><div class="modal-title">재검증 요청</div></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-title">테스트 케이스 유형</div>
+        <table class="modal-info-table"><thead><tr><th>유형</th><th>목적</th></tr></thead><tbody><tr><td>기존 응답 검토</td><td>신뢰성 및 correction 검증</td></tr></tbody></table>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">검증 기준</div>
+        <div class="validation-grid">
+          <div class="validation-row"><span class="validation-label">우선 고려 요소</span><span class="validation-value">Reliability</span></div>
+          <div class="validation-row"><span class="validation-label">주요 검증 기준</span><span class="validation-value">응답 신뢰성 및 correction</span></div>
+          <div class="validation-row"><span class="validation-label">핵심 지표</span><div class="metric-chips"><span class="metric-chip">Reliability</span><span class="metric-chip">Correction Rate</span></div></div>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">테스트 케이스 생성 프롬프트</div>
+        <div class="prompt-box">
+          <textarea class="prompt-textarea" id="prompt-revalidation" placeholder="테스트 케이스 생성 프롬프트를 작성하세요...">서비스 기능: 재검증 요청
+테스트 케이스 유형: 기존 응답 검토
+핵심 지표: Reliability, Correction Rate
+
+아래 형식으로 테스트 케이스 5개를 생성해주세요.
+
+[TC-N]
+기존 응답:
+오류 유형:
+재검증 후 예상 응답:
+평가 기준: Reliability ≥ ?? / Correction Rate ≥ ??%
+통과 조건:</textarea>
+          <div class="prompt-actions"><button class="btn-copy" onclick="copyPrompt('prompt-revalidation', this)">복사</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function openModal(id) {
+    document.querySelectorAll('.modal').forEach(function(m) { m.classList.remove('active'); });
+    var modal = document.getElementById('modal-' + id);
+    if (modal) {
+      modal.classList.add('active');
+      document.getElementById('modalOverlay').classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  function closeModal() {
+    document.querySelectorAll('.modal').forEach(function(m) { m.classList.remove('active'); });
+    document.getElementById('modalOverlay').classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  function handleOverlayClick(e) {
+    if (e.target === document.getElementById('modalOverlay')) closeModal();
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeModal();
+  });
+
+  function copyPrompt(id, btn) {
+    var textarea = document.getElementById(id);
+    var copy = function() {
+      btn.textContent = '복사됨';
+      btn.classList.add('copied');
+      setTimeout(function() { btn.textContent = '복사'; btn.classList.remove('copied'); }, 2000);
+    };
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(textarea.value).then(copy);
+    } else {
+      textarea.select();
+      document.execCommand('copy');
+      copy();
+    }
+  }
+</script>
 </body>
 </html>
