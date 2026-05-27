@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hybrid AI 라우팅 정책 데모</title>
+  <style>
+    /* ========== Reset & Base ========== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f7fb;
+      color: #1e2130;
+      line-height: 1.6;
+    }
+
+    /* ========== Layout ========== */
+    .container { max-width: 1280px; margin: 0 auto; padding: 0 24px 60px; }
+
+    /* ========== Header ========== */
+    .site-header {
+      background: linear-gradient(135deg, #1a1f36 0%, #2d3561 100%);
+      color: #fff;
+      padding: 36px 24px 32px;
+      text-align: center;
+    }
+    .site-header h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.5px; }
+    .site-header p { margin-top: 6px; opacity: 0.75; font-size: 0.9rem; }
+
+    /* ========== Section ========== */
+    .section { margin-top: 36px; }
+    .section-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #2d3561;
+      border-left: 4px solid #2d3561;
+      padding-left: 12px;
+      margin-bottom: 18px;
+      letter-spacing: -0.2px;
+    }
+
+    /* ========== Card ========== */
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+      padding: 24px;
+    }
+
+    /* ========== Demo Overview ========== */
+    .overview-card { border-left: 4px solid #2d3561; }
+    .overview-card .desc-en { font-size: 0.95rem; color: #3a4070; margin-bottom: 10px; }
+    .overview-card .desc-ko { font-size: 0.88rem; color: #6b7280; }
+
+    .flow-bar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 20px;
+    }
+    .flow-step {
+      background: #2d3561;
+      color: #fff;
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .flow-arrow { color: #9ca3af; font-size: 1rem; padding: 0 4px; }
+
+    /* ========== Summary Cards ========== */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 8px;
+    }
+    .summary-card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      padding: 18px 20px;
+      text-align: center;
+    }
+    .summary-card .s-label { font-size: 0.76rem; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .summary-card .s-value { font-size: 1.6rem; font-weight: 700; color: #2d3561; margin-top: 4px; }
+
+    /* ========== Alert ========== */
+    .alert-box {
+      background: #fff7ed;
+      border: 1px solid #fb923c;
+      border-radius: 10px;
+      padding: 14px 18px;
+      color: #9a3412;
+      font-size: 0.88rem;
+      margin-top: 14px;
+      display: none;
+    }
+    .alert-box.visible { display: block; }
+    .alert-box strong { display: block; margin-bottom: 6px; font-size: 0.9rem; }
+    .alert-box ul { padding-left: 18px; }
+    .alert-box ul li { margin-bottom: 2px; }
+
+    /* ========== Model Selector ========== */
+    .model-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .model-checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #f0f4ff;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      padding: 8px 14px;
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-weight: 500;
+      transition: all 0.15s;
+      user-select: none;
+    }
+    .model-checkbox-label:hover { border-color: #2d3561; background: #e8edff; }
+    .model-checkbox-label input { accent-color: #2d3561; width: 15px; height: 15px; }
+    .model-checkbox-label.checked { border-color: #2d3561; background: #e0e7ff; }
+
+    /* ========== Table ========== */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 700px; }
+    thead tr { background: #f0f4ff; }
+    th {
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 700;
+      color: #374151;
+      white-space: nowrap;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    td {
+      padding: 9px 14px;
+      border-bottom: 1px solid #f1f3f8;
+      vertical-align: middle;
+    }
+    tbody tr:hover { background: #f8f9ff; }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* 지표 수치 색상 */
+    .val-good  { color: #16a34a; font-weight: 600; }
+    .val-mid   { color: #d97706; font-weight: 600; }
+    .val-bad   { color: #dc2626; font-weight: 600; }
+
+    /* ========== Tier Cards ========== */
+    .tier-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 16px;
+    }
+    .tier-card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      padding: 18px 20px;
+    }
+    .tier-card .model-name { font-weight: 700; font-size: 0.95rem; margin-bottom: 10px; color: #1e2130; }
+    .tier-card .provider   { font-size: 0.78rem; color: #6b7280; margin-bottom: 10px; }
+    .tier-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tier-badge {
+      border-radius: 20px;
+      padding: 3px 11px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+    }
+    /* Tier 색상 */
+    .t1 { background: #16a34a; }
+    .t2 { background: #2563eb; }
+    .t3 { background: #7c3aed; }
+    .t4 { background: #ea580c; }
+    .t5 { background: #dc2626; }
+    .t-unknown { background: #6b7280; }
+
+    /* ========== 서비스 기능 테이블 ========== */
+    .path-tag {
+      display: inline-block;
+      border-radius: 6px;
+      padding: 2px 10px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #fff;
+    }
+    .model-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+    .model-chip {
+      background: #e0e7ff;
+      color: #3730a3;
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 0.76rem;
+      font-weight: 600;
+    }
+    .no-model { color: #9ca3af; font-size: 0.82rem; font-style: italic; }
+
+    /* ========== 정책 플로우차트 ========== */
+    .fc-wrap {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+      padding: 32px 24px 28px;
+      overflow-x: auto;
+    }
+    .fc-title {
+      font-size: 1rem; font-weight: 700; color: #2d3561;
+      margin-bottom: 28px; text-align: center;
+    }
+
+    /* 공통 노드 */
+    .fc-node {
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-align: center;
+      white-space: nowrap;
+      line-height: 1.4;
+    }
+    .fc-node-entry {
+      background: #1e2130; color: #fff;
+      border-radius: 24px;
+      padding: 10px 28px;
+      font-size: 0.88rem;
+    }
+    .fc-node-decision {
+      background: #2d3561; color: #fff;
+      clip-path: polygon(10% 0%, 90% 0%, 100% 50%, 90% 100%, 10% 100%, 0% 50%);
+      padding: 14px 36px;
+      font-size: 0.85rem;
+    }
+    .fc-node-validation {
+      background: #374151; color: #fff;
+      border-radius: 10px;
+      padding: 10px 28px;
+      font-size: 0.85rem;
+    }
+
+    /* 수직 연결선 */
+    .fc-vline {
+      width: 2px; height: 22px;
+      background: #9ca3af;
+      margin: 0 auto;
+    }
+    /* 화살표 머리 */
+    .fc-arrow {
+      width: 0; height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-top: 8px solid #9ca3af;
+      margin: 0 auto;
+    }
+
+    /* 중앙 정렬 행 */
+    .fc-row-center { display: flex; justify-content: center; }
+
+    /* 분기 팬아웃 영역 */
+    .fc-fanout {
+      position: relative;
+      display: flex;
+      min-width: 700px;
+    }
+    /* 분기 위 수평 연결바 */
+    .fc-fanout::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: calc(100% / 12);
+      right: calc(100% / 12);
+      height: 2px;
+      background: #9ca3af;
+    }
+
+    /* 개별 분기 열 */
+    .fc-branch {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 22px;
+      position: relative;
+      gap: 6px;
+      min-width: 0;
+    }
+    /* 수평바에서 각 열로 내려오는 수직선 */
+    .fc-branch::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 2px;
+      height: 22px;
+      background: #9ca3af;
+    }
+
+    /* Path 노드 (Tier 색상) */
+    .fc-path-node {
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #fff;
+      text-align: center;
+      width: 90%;
+      line-height: 1.4;
+    }
+    .fc-tier-badge {
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .fc-model-area {
+      background: #f8f9ff;
+      border: 1px dashed #c7d2fe;
+      border-radius: 8px;
+      padding: 6px 8px;
+      width: 90%;
+      min-height: 36px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      justify-content: center;
+      align-items: center;
+    }
+    .fc-model-chip {
+      background: #e0e7ff; color: #3730a3;
+      border-radius: 20px;
+      padding: 2px 8px;
+      font-size: 0.68rem;
+      font-weight: 600;
+    }
+    .fc-no-model {
+      color: #9ca3af; font-size: 0.7rem; font-style: italic; text-align: center;
+    }
+    .fc-branch-vline {
+      width: 2px; height: 10px;
+      background: #9ca3af;
+    }
+
+    /* 수렴 팬인 영역 */
+    .fc-fanin {
+      position: relative;
+      display: flex;
+      min-width: 700px;
+    }
+    .fc-fanin::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: calc(100% / 12);
+      right: calc(100% / 12);
+      height: 2px;
+      background: #9ca3af;
+    }
+    .fc-fanin-col {
+      flex: 1;
+      position: relative;
+    }
+    .fc-fanin-col::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      width: 2px;
+      height: 20px;
+      background: #9ca3af;
+    }
+    .fc-fanin-spacer { height: 20px; }
+
+    /* 결과 노드 행 */
+    .fc-outcomes {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+    .fc-outcome {
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.5;
+      min-width: 130px;
+    }
+    .fc-outcome small {
+      display: block;
+      font-weight: 400;
+      font-size: 0.72rem;
+      margin-top: 2px;
+      opacity: 0.85;
+    }
+    .outcome-success    { background: #dcfce7; color: #166534; }
+    .outcome-retry      { background: #fef9c3; color: #713f12; }
+    .outcome-escalation { background: #ede9fe; color: #4c1d95; }
+    .outcome-fallback   { background: #fee2e2; color: #7f1d1d; }
+
+    /* ========== 데이터 없음 ========== */
+    .no-data { text-align: center; color: #9ca3af; padding: 40px 0; font-size: 0.9rem; }
+
+    /* ========== 반응형 ========== */
+    @media (max-width: 640px) {
+      .site-header h1 { font-size: 1.3rem; }
+      .flow-bar { gap: 6px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ───────────────── 헤더 ───────────────── -->
+<header class="site-header">
+  <h1>Hybrid AI 라우팅 정책 데모</h1>
+  <p>라우팅 정책 추천 · 리서치 대시보드</p>
+</header>
+
+<div class="container">
+
+  <!-- ═══════════════════════════════════════
+       섹션 1 · 데모 개요
+  ═══════════════════════════════════════ -->
+  <section class="section" id="sec-overview">
+    <h2 class="section-title">1. 데모 개요</h2>
+    <div class="card overview-card">
+      <p class="desc-en">
+        This demo shows how selected LLM models can be evaluated, mapped into Model Tiers, and used to generate service-specific Routing Path recommendations.
+      </p>
+      <p class="desc-ko">
+        본 화면은 사용자가 선택한 모델의 평가 결과를 기반으로 Model Tier를 분류하고, 서비스 기능별로 적합한 Routing Path와 Policy 초안을 추천하는 과정을 시연합니다.
+      </p>
+      <!-- 흐름 표시 바 -->
+      <div class="flow-bar">
+        <span class="flow-step">모델 평가</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-step">Tier 분류</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-step">서비스 경로 추천</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-step">정책 초안 생성</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       섹션 2 · 모델 선택 및 평가 결과
+  ═══════════════════════════════════════ -->
+  <section class="section" id="sec-selection">
+    <h2 class="section-title">2. 모델 선택 및 평가 결과</h2>
+    <div class="card">
+      <!-- 체크박스 -->
+      <div class="model-grid" id="model-checkboxes"></div>
+
+      <!-- 요약 카드 -->
+      <div class="summary-grid" id="summary-cards"></div>
+
+      <!-- 누락 Tier 경고 -->
+      <div class="alert-box" id="alert-box">
+        <strong>⚠ 누락된 Tier 커버리지</strong>
+        <ul id="alert-list"></ul>
+      </div>
+
+      <!-- 평가 결과 테이블 -->
+      <div class="table-wrap" style="margin-top: 20px;">
+        <table id="eval-table">
+          <thead>
+            <tr>
+              <th>모델</th>
+              <th>제공사 / 런타임</th>
+              <th>정확도 (%)</th>
+              <th>p95 지연 (초)</th>
+              <th>비용 지수</th>
+              <th>포맷 성공률 (%)</th>
+              <th>출처 일치율 (%)</th>
+              <th>컨텍스트 점수</th>
+              <th>추론 점수</th>
+            </tr>
+          </thead>
+          <tbody id="eval-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       섹션 3 · 모델 Tier 분류
+  ═══════════════════════════════════════ -->
+  <section class="section" id="sec-tier">
+    <h2 class="section-title">3. 모델 Tier 분류</h2>
+    <div class="tier-cards-grid" id="tier-cards"></div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       섹션 4 · 서비스 기능별 추천 라우팅 경로
+  ═══════════════════════════════════════ -->
+  <section class="section" id="sec-service">
+    <h2 class="section-title">4. 서비스 기능별 추천 라우팅 경로</h2>
+    <div class="card">
+      <div class="table-wrap">
+        <table id="service-table">
+          <thead>
+            <tr>
+              <th>서비스 기능</th>
+              <th>요구사항</th>
+              <th>권장 Tier</th>
+              <th>추천 경로</th>
+              <th>후보 모델</th>
+              <th>주요 검증 지표</th>
+            </tr>
+          </thead>
+          <tbody id="service-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       섹션 5 · 라우팅 정책 초안 생성
+  ═══════════════════════════════════════ -->
+  <section class="section" id="sec-policy">
+    <h2 class="section-title">5. 라우팅 정책 초안 생성</h2>
+    <div class="fc-wrap">
+      <p class="fc-title">추천 하이브리드 라우팅 정책 — 결정 흐름도</p>
+
+      <!-- 1. 진입점 -->
+      <div class="fc-row-center">
+        <div class="fc-node fc-node-entry">● 사용자 요청</div>
+      </div>
+      <div class="fc-vline"></div>
+      <div class="fc-arrow"></div>
+
+      <!-- 2. 판단 노드 -->
+      <div class="fc-row-center" style="margin: 4px 0;">
+        <div class="fc-node fc-node-decision">서비스 유형 판단</div>
+      </div>
+      <div class="fc-vline"></div>
+
+      <!-- 3. 분기 팬아웃 + 각 Path -->
+      <div style="overflow-x:auto;">
+        <div class="fc-fanout" id="fc-fanout"></div>
+
+        <!-- 4. 수렴 팬인 -->
+        <div class="fc-fanin" id="fc-fanin"></div>
+      </div>
+
+      <div class="fc-arrow"></div>
+
+      <!-- 5. 검증 노드 -->
+      <div class="fc-row-center" style="margin: 4px 0;">
+        <div class="fc-node fc-node-validation">응답 검증</div>
+      </div>
+      <div class="fc-vline"></div>
+      <div class="fc-arrow"></div>
+
+      <!-- 6. 결과 노드들 -->
+      <div class="fc-outcomes">
+        <div class="fc-outcome outcome-success">
+          ✓ 응답 완료
+          <small>검증 통과</small>
+        </div>
+        <div class="fc-outcome outcome-retry">
+          ⟳ Strict Retry
+          <small>파싱 검증 실패 시</small>
+        </div>
+        <div class="fc-outcome outcome-escalation">
+          ↑ Escalation Path
+          <small>응답 신뢰도 낮을 시</small>
+        </div>
+        <div class="fc-outcome outcome-fallback">
+          ↩ Fallback Path
+          <small>타임아웃 / API 장애 시</small>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /container -->
+
+
+<!-- ═══════════════════════════════════════
+     JavaScript — 데이터 및 로직
+═══════════════════════════════════════ -->
+<script>
+// ──────────────────────────────────────────
+// 1. 원본 데이터
+// ──────────────────────────────────────────
+
+const modelMetrics = {
+  "llama3.1:8b": {
+    provider: "Meta / Ollama",
+    accuracy: 52.1,
+    p95Latency: 2.65,
+    costIndex: 1,
+    formatSuccess: 72,
+    sourceAlignment: 60,
+    contextScore: 55,
+    reasoningScore: 58
+  },
+  "qwen3:8b": {
+    provider: "Alibaba / Ollama",
+    accuracy: 79.2,
+    p95Latency: 41.92,
+    costIndex: 2,
+    formatSuccess: 78,
+    sourceAlignment: 74,
+    contextScore: 70,
+    reasoningScore: 80
+  },
+  "o1": {
+    provider: "OpenAI",
+    accuracy: 90,
+    p95Latency: 18.5,
+    costIndex: 5,
+    formatSuccess: 88,
+    sourceAlignment: 86,
+    contextScore: 88,
+    reasoningScore: 95
+  },
+  "GPT-4o": {
+    provider: "OpenAI",
+    accuracy: 88,
+    p95Latency: 9.8,
+    costIndex: 4,
+    formatSuccess: 92,
+    sourceAlignment: 87,
+    contextScore: 85,
+    reasoningScore: 90
+  },
+  "Claude 3.5 Sonnet": {
+    provider: "Anthropic",
+    accuracy: 87,
+    p95Latency: 11.2,
+    costIndex: 4,
+    formatSuccess: 90,
+    sourceAlignment: 88,
+    contextScore: 90,
+    reasoningScore: 89
+  },
+  "Kimi": {
+    provider: "Moonshot AI",
+    accuracy: 82,
+    p95Latency: 14.5,
+    costIndex: 3,
+    formatSuccess: 82,
+    sourceAlignment: 86,
+    contextScore: 95,
+    reasoningScore: 82
+  },
+  "Qwen 2.5 Coder": {
+    provider: "Alibaba",
+    accuracy: 76,
+    p95Latency: 8.2,
+    costIndex: 2,
+    formatSuccess: 94,
+    sourceAlignment: 70,
+    contextScore: 68,
+    reasoningScore: 74
+  }
+};
+
+// 기본 선택 모델
+const DEFAULT_SELECTED = ["llama3.1:8b", "qwen3:8b", "o1"];
+
+// 서비스 기능 정의
+const serviceFeatures = [
+  {
+    feature: "일반 FAQ",
+    requirement: "빠른 응답",
+    preferredTier: "T1 Lightweight",
+    path: "Lightweight Path",
+    validation: "정확도, 지연시간"
+  },
+  {
+    feature: "업무 QA",
+    requirement: "균형 잡힌 응답",
+    preferredTier: "T2 Standard",
+    path: "Standard Path",
+    validation: "정확도, 지연시간, 사람 검토"
+  },
+  {
+    feature: "정책 / 규정 QA",
+    requirement: "높은 정확도 및 근거 기반 답변",
+    preferredTier: "T3 Advanced",
+    path: "Advanced Path",
+    validation: "정확도, 출처 일치율"
+  },
+  {
+    feature: "SQL / JSON 생성",
+    requirement: "구조화된 출력",
+    preferredTier: "T5 Structured",
+    path: "Structured Path",
+    validation: "포맷 성공률, 포맷 준수율"
+  },
+  {
+    feature: "RAG 문서 QA",
+    requirement: "긴 컨텍스트 및 출처 기반 답변",
+    preferredTier: "T4 Long Context",
+    path: "Long Context Path",
+    validation: "검색 관련성, 출처 일치율"
+  },
+  {
+    feature: "재검증 요청",
+    requirement: "신뢰성 및 오류 수정",
+    preferredTier: "T3 Advanced",
+    path: "Escalation Path",
+    validation: "응답 신뢰성, 오류 수정률"
+  }
+];
+
+// Tier 표시 설정 (레이블 → CSS 클래스, 색상)
+const TIER_CONFIG = {
+  "T1 Lightweight":           { cls: "t1", color: "#16a34a" },
+  "T2 Standard":              { cls: "t2", color: "#2563eb" },
+  "T3 Advanced":              { cls: "t3", color: "#7c3aed" },
+  "T4 Long Context":          { cls: "t4", color: "#ea580c" },
+  "T5 Structured":            { cls: "t5", color: "#dc2626" },
+  "추가 평가 필요":            { cls: "t-unknown", color: "#6b7280" }
+};
+
+// 전체 Tier 목록 (누락 커버리지 검사용)
+const ALL_TIERS = ["T1 Lightweight","T2 Standard","T3 Advanced","T4 Long Context","T5 Structured"];
+
+// ──────────────────────────────────────────
+// 2. Tier 분류 로직
+// ──────────────────────────────────────────
+function classifyTiers(metric) {
+  const tiers = [];
+
+  if (metric.p95Latency <= 5 && metric.costIndex <= 2)
+    tiers.push("T1 Lightweight");
+
+  if (metric.accuracy >= 65 && metric.p95Latency <= 20)
+    tiers.push("T2 Standard");
+
+  if (metric.accuracy >= 85 || metric.reasoningScore >= 88)
+    tiers.push("T3 Advanced");
+
+  if (metric.contextScore >= 85)
+    tiers.push("T4 Long Context");
+
+  if (metric.formatSuccess >= 88)
+    tiers.push("T5 Structured");
+
+  if (tiers.length === 0)
+    tiers.push("추가 평가 필요");
+
+  return tiers;
+}
+
+// ──────────────────────────────────────────
+// 3. 상태
+// ──────────────────────────────────────────
+let selectedModels = [...DEFAULT_SELECTED];
+
+// ──────────────────────────────────────────
+// 4. 유틸 함수
+// ──────────────────────────────────────────
+
+// 지표 수치를 품질 방향에 따라 색상 처리
+function colourVal(value, goodThreshold, badThreshold, higherIsBetter = true) {
+  if (higherIsBetter) {
+    if (value >= goodThreshold) return `<span class="val-good">${value}</span>`;
+    if (value <= badThreshold)  return `<span class="val-bad">${value}</span>`;
+  } else {
+    if (value <= goodThreshold) return `<span class="val-good">${value}</span>`;
+    if (value >= badThreshold)  return `<span class="val-bad">${value}</span>`;
+  }
+  return `<span class="val-mid">${value}</span>`;
+}
+
+// Tier 색상 적용 경로 태그 생성
+function pathTag(tier, label) {
+  const cfg = TIER_CONFIG[tier] || { color: "#6b7280" };
+  return `<span class="path-tag" style="background:${cfg.color}">${label}</span>`;
+}
+
+// 선택된 모델 중 해당 Tier에 속하는 후보 반환
+function candidatesForTier(tier) {
+  return selectedModels.filter(m => {
+    const t = classifyTiers(modelMetrics[m]);
+    return t.includes(tier);
+  });
+}
+
+// ──────────────────────────────────────────
+// 5. 렌더링 함수
+// ──────────────────────────────────────────
+
+/* 5-a. 체크박스 */
+function renderCheckboxes() {
+  const container = document.getElementById("model-checkboxes");
+  container.innerHTML = "";
+  Object.keys(modelMetrics).forEach(name => {
+    const isChecked = selectedModels.includes(name);
+    const label = document.createElement("label");
+    label.className = "model-checkbox-label" + (isChecked ? " checked" : "");
+    label.innerHTML = `
+      <input type="checkbox" value="${name}" ${isChecked ? "checked" : ""} />
+      ${name}
+    `;
+    label.querySelector("input").addEventListener("change", e => {
+      if (e.target.checked) {
+        selectedModels.push(name);
+      } else {
+        selectedModels = selectedModels.filter(m => m !== name);
+      }
+      label.classList.toggle("checked", e.target.checked);
+      renderAll();
+    });
+    container.appendChild(label);
+  });
+}
+
+/* 5-b. 평가 결과 테이블 */
+function renderEvalTable() {
+  const tbody = document.getElementById("eval-tbody");
+  if (selectedModels.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" class="no-data">선택된 모델이 없습니다.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = selectedModels.map(name => {
+    const m = modelMetrics[name];
+    return `
+      <tr>
+        <td><strong>${name}</strong></td>
+        <td>${m.provider}</td>
+        <td>${colourVal(m.accuracy, 85, 65)}</td>
+        <td>${colourVal(m.p95Latency, 5, 20, false)}</td>
+        <td>${colourVal(m.costIndex, 1, 4, false)}</td>
+        <td>${colourVal(m.formatSuccess, 88, 75)}</td>
+        <td>${colourVal(m.sourceAlignment, 85, 70)}</td>
+        <td>${colourVal(m.contextScore, 85, 65)}</td>
+        <td>${colourVal(m.reasoningScore, 88, 70)}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+/* 5-c. 요약 카드 + 경고 */
+function renderSummary() {
+  // 선택된 모델의 Tier 맵 구성
+  const tierMap = {};
+  selectedModels.forEach(m => {
+    classifyTiers(modelMetrics[m]).forEach(t => {
+      if (!tierMap[t]) tierMap[t] = [];
+      tierMap[t].push(m);
+    });
+  });
+
+  const mappedTiers = Object.keys(tierMap).filter(t => t !== "추가 평가 필요");
+  const coveredFeatures = serviceFeatures.filter(sf =>
+    candidatesForTier(sf.preferredTier).length > 0
+  ).length;
+  const missingTiers = ALL_TIERS.filter(t => !mappedTiers.includes(t));
+
+  // 요약 카드
+  document.getElementById("summary-cards").innerHTML = `
+    <div class="summary-card">
+      <div class="s-label">선택된 모델</div>
+      <div class="s-value">${selectedModels.length}</div>
+    </div>
+    <div class="summary-card">
+      <div class="s-label">분류된 Tier</div>
+      <div class="s-value">${mappedTiers.length}</div>
+    </div>
+    <div class="summary-card">
+      <div class="s-label">커버된 서비스 기능</div>
+      <div class="s-value">${coveredFeatures}/${serviceFeatures.length}</div>
+    </div>
+    <div class="summary-card">
+      <div class="s-label">누락된 Tier</div>
+      <div class="s-value" style="font-size:0.95rem;color:${missingTiers.length > 0 ? '#dc2626' : '#16a34a'}">
+        ${missingTiers.length === 0 ? "없음" : missingTiers.map(t => t.replace("T","").replace(" ","")).join(", ")}
+      </div>
+    </div>
+  `;
+
+  // 경고 박스
+  const alertBox  = document.getElementById("alert-box");
+  const alertList = document.getElementById("alert-list");
+  if (missingTiers.length > 0) {
+    alertList.innerHTML = missingTiers.map(t => {
+      const affected = serviceFeatures
+        .filter(sf => sf.preferredTier === t)
+        .map(sf => sf.feature).join(", ");
+      return `<li><strong>${t}</strong> — 선택된 모델이 없습니다. 영향받는 기능: ${affected || "—"}</li>`;
+    }).join("");
+    alertBox.classList.add("visible");
+  } else {
+    alertBox.classList.remove("visible");
+  }
+}
+
+/* 5-d. Tier 카드 */
+function renderTierCards() {
+  const container = document.getElementById("tier-cards");
+  if (selectedModels.length === 0) {
+    container.innerHTML = `<p class="no-data" style="grid-column:1/-1">선택된 모델이 없습니다.</p>`;
+    return;
+  }
+  container.innerHTML = selectedModels.map(name => {
+    const m = modelMetrics[name];
+    const tiers = classifyTiers(m);
+    const badges = tiers.map(t => {
+      const cfg = TIER_CONFIG[t] || { cls: "t-unknown" };
+      return `<span class="tier-badge ${cfg.cls}">${t}</span>`;
+    }).join("");
+
+    // 분류 이유 설명
+    const reasons = [];
+    if (tiers.includes("T1 Lightweight"))  reasons.push("낮은 지연 & 비용");
+    if (tiers.includes("T2 Standard"))     reasons.push("정확도와 속도의 균형");
+    if (tiers.includes("T3 Advanced"))     reasons.push("높은 정확도 / 추론 능력");
+    if (tiers.includes("T4 Long Context")) reasons.push("뛰어난 컨텍스트 처리");
+    if (tiers.includes("T5 Structured"))   reasons.push("우수한 포맷 안정성");
+    if (tiers.includes("추가 평가 필요"))  reasons.push("모든 임계값 미달");
+
+    return `
+      <div class="tier-card">
+        <div class="model-name">${name}</div>
+        <div class="provider">${m.provider}</div>
+        <div class="tier-badges">${badges}</div>
+        <div style="font-size:0.78rem;color:#6b7280;margin-top:10px;">
+          ${reasons.join(" · ")}
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+/* 5-e. 서비스 기능 테이블 */
+function renderServiceTable() {
+  const tbody = document.getElementById("service-tbody");
+  tbody.innerHTML = serviceFeatures.map(sf => {
+    const candidates = candidatesForTier(sf.preferredTier);
+
+    const candidateHtml = candidates.length > 0
+      ? `<div class="model-chips">${candidates.map(c =>
+          `<span class="model-chip">${c}</span>`
+        ).join("")}</div>`
+      : `<span class="no-model">후보 모델이 선택되지 않았습니다</span>`;
+
+    return `
+      <tr>
+        <td><strong>${sf.feature}</strong></td>
+        <td style="color:#374151">${sf.requirement}</td>
+        <td>${pathTag(sf.preferredTier, sf.preferredTier)}</td>
+        <td>${pathTag(sf.preferredTier, sf.path)}</td>
+        <td>${candidateHtml}</td>
+        <td style="color:#6b7280;font-size:0.82rem">${sf.validation}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+/* 5-f. 플로우차트 렌더링 */
+function renderPolicy() {
+  // 서비스 기능별 분기 정의 (serviceFeatures 순서와 별개로 Path 기준 정렬)
+  const branches = [
+    { label: "일반 FAQ",      path: "Lightweight Path", tier: "T1 Lightweight" },
+    { label: "업무 QA",       path: "Standard Path",    tier: "T2 Standard"    },
+    { label: "정책·규정 QA",  path: "Advanced Path",    tier: "T3 Advanced"    },
+    { label: "RAG 문서 QA",   path: "Long Context Path",tier: "T4 Long Context"},
+    { label: "SQL·JSON 생성", path: "Structured Path",  tier: "T5 Structured"  },
+    { label: "재검증 요청",   path: "Escalation Path",  tier: "T3 Advanced"    },
+  ];
+
+  const fanout = document.getElementById("fc-fanout");
+  const fanin  = document.getElementById("fc-fanin");
+
+  fanout.innerHTML = branches.map(b => {
+    const cfg       = TIER_CONFIG[b.tier] || { color: "#6b7280", cls: "t-unknown" };
+    const candidates = candidatesForTier(b.tier);
+    const modelHtml = candidates.length > 0
+      ? candidates.map(m => `<span class="fc-model-chip">${m}</span>`).join("")
+      : `<span class="fc-no-model">후보 없음</span>`;
+
+    return `
+      <div class="fc-branch">
+        <!-- 서비스 기능 라벨 -->
+        <div class="fc-path-node" style="background:${cfg.color}">
+          ${b.label}
+        </div>
+        <div class="fc-branch-vline"></div>
+        <!-- Path 이름 -->
+        <span class="fc-tier-badge" style="background:${cfg.color}">${b.path}</span>
+        <div class="fc-branch-vline"></div>
+        <!-- Tier 배지 -->
+        <span style="font-size:0.7rem;color:#6b7280;font-weight:600;">${b.tier}</span>
+        <div class="fc-branch-vline"></div>
+        <!-- 후보 모델 -->
+        <div class="fc-model-area">${modelHtml}</div>
+      </div>
+    `;
+  }).join("");
+
+  // 수렴 팬인: 분기 수만큼 빈 컬럼 생성 (하단 수평 연결선용)
+  fanin.innerHTML = branches.map(() =>
+    `<div class="fc-fanin-col"><div class="fc-fanin-spacer"></div></div>`
+  ).join("");
+}
+
+// ──────────────────────────────────────────
+// 6. 전체 렌더링 (변경 시마다 호출)
+// ──────────────────────────────────────────
+function renderAll() {
+  renderEvalTable();
+  renderSummary();
+  renderTierCards();
+  renderServiceTable();
+  renderPolicy();
+}
+
+// ──────────────────────────────────────────
+// 7. 초기화
+// ──────────────────────────────────────────
+renderCheckboxes();
+renderAll();
+</script>
+</body>
+</html>

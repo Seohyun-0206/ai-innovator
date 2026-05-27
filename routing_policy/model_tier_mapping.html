@@ -6,26 +6,26 @@
   <title>Hybrid LLM Routing Policy — Model Tier Mapping</title>
   <style>
     :root {
-      --bg: #0f1117;
-      --surface: #1a1d27;
-      --surface2: #22263a;
-      --border: #2e3248;
-      --text: #e2e8f0;
-      --muted: #8892a4;
-      --accent-light: #60a5fa;
-      --accent-std:   #34d399;
-      --accent-adv:   #a78bfa;
-      --accent-ctx:   #fb923c;
-      --accent-str:   #f472b6;
-      --light-bg: #1e2d45;
-      --std-bg:   #1a3530;
-      --adv-bg:   #2a2040;
-      --ctx-bg:   #3a2a1a;
-      --str-bg:   #3a1a2e;
+      --bg:           #f5f7fb;
+      --surface:      #ffffff;
+      --surface2:     #f0f4ff;
+      --border:       #e5e7eb;
+      --text:         #1e2130;
+      --muted:        #6b7280;
+      --accent-light: #16a34a;
+      --accent-std:   #2563eb;
+      --accent-adv:   #7c3aed;
+      --accent-ctx:   #ea580c;
+      --accent-str:   #dc2626;
+      --light-bg:     #f0fdf4;
+      --std-bg:       #eff6ff;
+      --adv-bg:       #f5f3ff;
+      --ctx-bg:       #fff7ed;
+      --str-bg:       #fef2f2;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background: var(--bg);
       color: var(--text);
       line-height: 1.6;
@@ -34,34 +34,43 @@
 
     /* ── Header ── */
     header {
-      background: linear-gradient(135deg, #1a1d27 0%, #12151f 100%);
-      border-bottom: 1px solid var(--border);
-      padding: 48px 40px 36px;
+      background: linear-gradient(135deg, #1a1f36 0%, #2d3561 100%);
+      padding: 36px 24px 32px;
       text-align: center;
     }
-    header h1 {
-      font-size: 2rem;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-      background: linear-gradient(90deg, #60a5fa, #a78bfa, #f472b6);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    header p { color: var(--muted); margin-top: 8px; font-size: 0.95rem; }
-    .meta-badges { display: flex; gap: 10px; justify-content: center; margin-top: 18px; flex-wrap: wrap; }
+    header h1 { font-size: 1.75rem; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
+    header p  { color: rgba(255,255,255,0.7); margin-top: 6px; font-size: 0.9rem; }
+    .header-actions { display: flex; justify-content: center; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
+    .meta-badges { display: flex; gap: 10px; justify-content: center; margin-top: 12px; flex-wrap: wrap; }
     .badge { padding: 4px 12px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; border: 1px solid; }
+
+    /* 데모 확인 버튼 */
+    .btn-demo {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 9px 20px;
+      background: #fff;
+      color: #2d3561;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      text-decoration: none;
+    }
+    .btn-demo:hover { background: #e8edff; transform: translateY(-1px); }
 
     /* ── Layout ── */
     .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
-    section { margin-top: 56px; }
+    section { margin-top: 48px; }
     h2 {
-      font-size: 1.2rem;
+      font-size: 1.05rem;
       font-weight: 700;
-      color: #cbd5e1;
-      border-left: 3px solid #60a5fa;
+      color: #2d3561;
+      border-left: 4px solid #2d3561;
       padding-left: 12px;
-      margin-bottom: 24px;
-      letter-spacing: 0.2px;
+      margin-bottom: 20px;
+      letter-spacing: -0.2px;
     }
 
     /* ── Tier Cards ── */
@@ -70,13 +79,14 @@
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
       padding: 20px 18px;
       position: relative;
       overflow: hidden;
-      transition: transform 0.15s;
+      transition: transform 0.15s, box-shadow 0.15s;
     }
-    .tier-card:hover { transform: translateY(-2px); }
-    .tier-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+    .tier-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.1); }
+    .tier-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; }
     .tier-card.light { background: var(--light-bg); } .tier-card.light::before { background: var(--accent-light); }
     .tier-card.std   { background: var(--std-bg);   } .tier-card.std::before   { background: var(--accent-std);   }
     .tier-card.adv   { background: var(--adv-bg);   } .tier-card.adv::before   { background: var(--accent-adv);   }
@@ -88,10 +98,10 @@
     .tier-card.adv   .tier-label { color: var(--accent-adv);   }
     .tier-card.ctx   .tier-label { color: var(--accent-ctx);   }
     .tier-card.str   .tier-label { color: var(--accent-str);   }
-    .tier-name { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+    .tier-name { font-size: 1rem; font-weight: 700; margin-bottom: 4px; color: var(--text); }
     .tier-role { font-size: 0.8rem; color: var(--muted); margin-bottom: 10px; }
-    .tier-desc { font-size: 0.82rem; color: #94a3b8; margin-bottom: 12px; line-height: 1.5; }
-    .tier-purpose { font-size: 0.78rem; color: var(--muted); background: rgba(0,0,0,0.2); border-radius: 6px; padding: 6px 10px; }
+    .tier-desc { font-size: 0.82rem; color: #4b5563; margin-bottom: 12px; line-height: 1.5; }
+    .tier-purpose { font-size: 0.78rem; color: var(--muted); background: rgba(0,0,0,0.05); border-radius: 6px; padding: 6px 10px; }
 
     /* ── Tier Chips & Tags ── */
     .tier-chip {
@@ -99,53 +109,53 @@
       padding: 3px 10px;
       border-radius: 999px;
       font-size: 0.72rem;
-      font-weight: 600;
-      border: 1px solid;
+      font-weight: 700;
+      color: #fff;
       white-space: nowrap;
     }
-    .chip-light { color: var(--accent-light); border-color: var(--accent-light); background: rgba(96,165,250,0.08); }
-    .chip-std   { color: var(--accent-std);   border-color: var(--accent-std);   background: rgba(52,211,153,0.08); }
-    .chip-adv   { color: var(--accent-adv);   border-color: var(--accent-adv);   background: rgba(167,139,250,0.08); }
-    .chip-ctx   { color: var(--accent-ctx);   border-color: var(--accent-ctx);   background: rgba(251,146,60,0.08);  }
-    .chip-str   { color: var(--accent-str);   border-color: var(--accent-str);   background: rgba(244,114,182,0.08); }
+    .chip-light { background: var(--accent-light); }
+    .chip-std   { background: var(--accent-std);   }
+    .chip-adv   { background: var(--accent-adv);   }
+    .chip-ctx   { background: var(--accent-ctx);   }
+    .chip-str   { background: var(--accent-str);   }
     .provider-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
-    .model-name { font-weight: 600; font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 0.85rem; }
+    .model-name { font-weight: 600; font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 0.85rem; color: var(--text); }
     .model-sub  { font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
     .tag-list { display: flex; flex-wrap: wrap; gap: 6px; }
-    .model-tag { font-size: 0.72rem; font-family: monospace; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 4px; padding: 2px 7px; color: #94a3b8; }
+    .model-tag { font-size: 0.72rem; font-family: monospace; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 2px 7px; color: #374151; }
 
-    /* ── Recommended Model Table ── */
-    .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
+    /* ── Table ── */
+    .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
     table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
     thead th {
       background: var(--surface2);
-      padding: 12px 16px;
+      padding: 11px 16px;
       text-align: left;
-      font-weight: 600;
-      color: var(--muted);
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      border-bottom: 1px solid var(--border);
+      font-weight: 700;
+      color: #374151;
+      font-size: 0.78rem;
+      border-bottom: 2px solid var(--border);
       white-space: nowrap;
     }
     tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
     tbody tr:last-child { border-bottom: none; }
-    tbody tr:hover { background: var(--surface2); }
-    tbody td { padding: 13px 16px; vertical-align: top; }
+    tbody tr:hover { background: #f8f9ff; }
+    tbody td { padding: 12px 16px; vertical-align: top; color: #374151; }
 
     /* ── Toggle Tier Blocks ── */
     .toggle-tier {
+      background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 12px;
       margin-bottom: 10px;
       overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
     }
-    .toggle-tier.light { border-left: 3px solid var(--accent-light); }
-    .toggle-tier.std   { border-left: 3px solid var(--accent-std);   }
-    .toggle-tier.adv   { border-left: 3px solid var(--accent-adv);   }
-    .toggle-tier.ctx   { border-left: 3px solid var(--accent-ctx);   }
-    .toggle-tier.str   { border-left: 3px solid var(--accent-str);   }
+    .toggle-tier.light { border-left: 4px solid var(--accent-light); }
+    .toggle-tier.std   { border-left: 4px solid var(--accent-std);   }
+    .toggle-tier.adv   { border-left: 4px solid var(--accent-adv);   }
+    .toggle-tier.ctx   { border-left: 4px solid var(--accent-ctx);   }
+    .toggle-tier.str   { border-left: 4px solid var(--accent-str);   }
     .toggle-tier summary {
       display: flex;
       align-items: center;
@@ -160,7 +170,7 @@
     }
     .toggle-tier summary::-webkit-details-marker { display: none; }
     .toggle-tier summary::marker { display: none; }
-    .toggle-tier summary:hover { background: var(--surface2); }
+    .toggle-tier summary:hover { background: #f8f9ff; }
     .toggle-tier[open] > summary { border-bottom: 1px solid var(--border); }
     .toggle-summary-info { flex: 1; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .toggle-summary-role { font-size: 0.78rem; color: var(--muted); }
@@ -173,54 +183,62 @@
       color: var(--muted);
       font-weight: 600;
     }
-    .toggle-chevron {
-      width: 16px; height: 16px;
-      color: var(--muted);
-      transition: transform 0.2s;
-      flex-shrink: 0;
-    }
+    .toggle-chevron { width: 16px; height: 16px; color: var(--muted); transition: transform 0.2s; flex-shrink: 0; }
     .toggle-tier[open] .toggle-chevron { transform: rotate(90deg); }
     .toggle-table { overflow-x: auto; }
-    .toggle-table table { border-radius: 0; border: none; }
-    .toggle-table thead th { border-radius: 0; }
+    .toggle-table table { border-radius: 0; border: none; box-shadow: none; }
 
-    /* ── Service Function Table ── */
+    /* ── Service Cards ── */
     .svc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; }
-    .svc-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
-    .svc-name { font-weight: 600; font-size: 0.9rem; margin-bottom: 6px; }
-    .svc-row  { font-size: 0.78rem; color: var(--muted); margin-bottom: 3px; }
-    .svc-row span { color: #94a3b8; }
+    .svc-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+    }
+    .svc-card:hover { transform: translateY(-2px); border-color: #a5b4fc; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .svc-name { font-weight: 700; font-size: 0.9rem; margin-bottom: 8px; color: var(--text); }
+    .svc-row  { font-size: 0.78rem; color: var(--muted); margin-bottom: 4px; }
+    .svc-row span { color: #374151; }
+    .svc-hint { font-size: 0.72rem; color: #9ca3af; margin-top: 10px; text-align: right; transition: color 0.15s; }
+    .svc-card:hover .svc-hint { color: #2d3561; }
 
     /* ── Routing Rules ── */
-    .rules-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; }
-    .rule-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; display: flex; gap: 14px; align-items: flex-start; }
+    .rules-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+    .rule-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
     .rule-id { font-size: 0.7rem; font-weight: 700; color: var(--muted); background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 3px 8px; white-space: nowrap; margin-top: 2px; }
     .rule-body { flex: 1; }
-    .rule-cond { font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; }
-    .rule-route { font-size: 0.78rem; color: var(--muted); }
-    .rule-opt  { font-size: 0.74rem; color: #64748b; margin-top: 2px; }
+    .rule-cond { font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; color: var(--text); }
+    .rule-route { font-size: 0.78rem; margin-top: 2px; }
+    .rule-opt  { font-size: 0.74rem; color: var(--muted); margin-top: 4px; }
 
     /* ── Footer ── */
     footer { text-align: center; color: var(--muted); font-size: 0.78rem; margin-top: 80px; padding-top: 24px; border-top: 1px solid var(--border); }
 
     @media (max-width: 600px) {
-      header { padding: 32px 20px 24px; }
-      header h1 { font-size: 1.4rem; }
+      header { padding: 28px 20px 22px; }
+      header h1 { font-size: 1.3rem; }
       .container { padding: 0 16px; }
     }
 
-    /* ── Clickable svc-card ── */
-    .svc-card { cursor: pointer; transition: transform 0.15s, border-color 0.15s; }
-    .svc-card:hover { transform: translateY(-2px); border-color: #4a5568; }
-    .svc-hint { font-size: 0.72rem; color: #64748b; margin-top: 10px; text-align: right; transition: color 0.15s; }
-    .svc-card:hover .svc-hint { color: var(--accent-light); }
-
-    /* ── Modal ── */
+    /* ── Modal (서비스 기능 상세) ── */
     .modal-overlay {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.72);
+      background: rgba(0,0,0,0.5);
       z-index: 1000;
       align-items: center;
       justify-content: center;
@@ -231,6 +249,7 @@
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
       width: 100%;
       max-width: 640px;
       max-height: 85vh;
@@ -250,7 +269,7 @@
       z-index: 1;
       border-radius: 16px 16px 0 0;
     }
-    .modal-title { font-size: 1.05rem; font-weight: 700; }
+    .modal-title { font-size: 1.05rem; font-weight: 700; color: var(--text); }
     .modal-subtitle { font-size: 0.72rem; color: var(--muted); margin-bottom: 4px; }
     .modal-close {
       width: 28px; height: 28px;
@@ -265,7 +284,7 @@
       margin-left: 12px;
       transition: background 0.15s, color 0.15s;
     }
-    .modal-close:hover { background: #2e3248; color: var(--text); }
+    .modal-close:hover { background: #e5e7eb; color: var(--text); }
     .modal-body { padding: 20px 24px 24px; }
     .modal-section { margin-bottom: 22px; }
     .modal-section:last-child { margin-bottom: 0; }
@@ -276,20 +295,20 @@
       letter-spacing: 0.8px;
       color: var(--muted);
       margin-bottom: 10px;
-      border-left: 2px solid #4a5568;
+      border-left: 2px solid #2d3561;
       padding-left: 8px;
     }
     .modal-info-table { width: 100%; font-size: 0.82rem; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; border-collapse: collapse; }
     .modal-info-table th { background: var(--surface2); padding: 8px 14px; text-align: left; font-size: 0.72rem; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); }
-    .modal-info-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: #94a3b8; }
+    .modal-info-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: #374151; }
     .modal-info-table tr:last-child td { border-bottom: none; }
     .modal-info-table td:first-child { color: var(--text); font-weight: 500; width: 40%; }
     .validation-grid { display: flex; flex-direction: column; gap: 8px; }
     .validation-row { display: flex; gap: 12px; align-items: flex-start; font-size: 0.82rem; }
     .validation-label { color: var(--muted); min-width: 100px; flex-shrink: 0; padding-top: 1px; font-size: 0.78rem; }
-    .validation-value { color: #94a3b8; }
+    .validation-value { color: #374151; }
     .metric-chips { display: flex; flex-wrap: wrap; gap: 5px; }
-    .metric-chip { font-size: 0.7rem; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 3px 8px; color: #94a3b8; font-family: 'Cascadia Code', monospace; }
+    .metric-chip { font-size: 0.7rem; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 3px 8px; color: #374151; font-family: 'Cascadia Code', monospace; }
     .prompt-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
     .prompt-textarea {
       width: 100%;
@@ -304,11 +323,63 @@
       resize: vertical;
       padding: 12px 14px;
     }
-    .prompt-textarea::placeholder { color: #4a5568; }
-    .prompt-actions { display: flex; justify-content: flex-end; padding: 8px 12px; border-top: 1px solid var(--border); background: rgba(0,0,0,0.15); }
+    .prompt-textarea::placeholder { color: #9ca3af; }
+    .prompt-actions { display: flex; justify-content: flex-end; padding: 8px 12px; border-top: 1px solid var(--border); background: rgba(0,0,0,0.03); }
     .btn-copy { font-size: 0.75rem; padding: 5px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; color: var(--muted); cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s; }
-    .btn-copy:hover { background: #2e3248; color: var(--text); }
-    .btn-copy.copied { color: var(--accent-std); border-color: var(--accent-std); }
+    .btn-copy:hover { background: #e5e7eb; color: var(--text); }
+    .btn-copy.copied { color: var(--accent-light); border-color: var(--accent-light); }
+
+    /* ── 데모 iframe 오버레이 ── */
+    .demo-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      background: rgba(0,0,0,0.6);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .demo-overlay.active { display: flex; }
+    .demo-container {
+      background: #fff;
+      border-radius: 14px;
+      overflow: hidden;
+      width: 100%;
+      max-width: 1200px;
+      height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.3);
+    }
+    .demo-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      background: linear-gradient(135deg, #1a1f36, #2d3561);
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .demo-topbar-title { font-size: 0.9rem; font-weight: 700; }
+    .demo-topbar-sub   { font-size: 0.76rem; opacity: 0.7; margin-top: 1px; }
+    .btn-demo-close {
+      padding: 6px 16px;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 6px;
+      color: #fff;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-demo-close:hover { background: rgba(255,255,255,0.25); }
+    .demo-iframe {
+      flex: 1;
+      border: none;
+      width: 100%;
+    }
   </style>
 </head>
 <body>
@@ -316,8 +387,11 @@
 <header>
   <h1>Hybrid LLM Routing Policy</h1>
   <p>Model Tier Mapping &amp; Routing Rule Reference</p>
+  <div class="header-actions">
+    <button class="btn-demo" onclick="openDemo()">라우팅 정책 데모 확인하기 →</button>
+  </div>
   <div class="meta-badges">
-    <span class="badge" style="color:#fb923c;border-color:#fb923c;background:rgba(251,146,60,0.08)">v1.0 · 2026-05-22</span>
+    <span class="badge" style="color:rgba(255,255,255,0.6);border-color:rgba(255,255,255,0.25);background:rgba(255,255,255,0.08)">v1.0 · 2026-05-22</span>
   </div>
 </header>
 
@@ -934,7 +1008,7 @@
         <div class="rule-id">R-08</div>
         <div class="rule-body">
           <div class="rule-cond">출력량 과다 예상</div>
-          <div class="rule-route" style="color:var(--muted)">Token-Control Path</div>
+          <div class="rule-route" style="color:#6b7280;font-weight:600">Token-Control Path</div>
           <div class="rule-opt">max_tokens 적용</div>
         </div>
       </div>
@@ -942,7 +1016,7 @@
         <div class="rule-id">R-09</div>
         <div class="rule-body">
           <div class="rule-cond">timeout 발생</div>
-          <div class="rule-route" style="color:#f87171">Fallback Path</div>
+          <div class="rule-route" style="color:#dc2626;font-weight:600">Fallback Path</div>
           <div class="rule-opt">대체 모델 호출</div>
         </div>
       </div>
@@ -950,7 +1024,7 @@
         <div class="rule-id">R-10</div>
         <div class="rule-body">
           <div class="rule-cond">parse fail 발생</div>
-          <div class="rule-route" style="color:#fbbf24">Retry Path</div>
+          <div class="rule-route" style="color:#d97706;font-weight:600">Retry Path</div>
           <div class="rule-opt">strict prompt 재시도</div>
         </div>
       </div>
@@ -958,7 +1032,7 @@
         <div class="rule-id">R-11</div>
         <div class="rule-body">
           <div class="rule-cond">신뢰도 낮음 / 재검증 필요</div>
-          <div class="rule-route" style="color:var(--accent-adv)">Escalation Path</div>
+          <div class="rule-route" style="color:var(--accent-adv);font-weight:600">Escalation Path</div>
           <div class="rule-opt">Advanced Tier 재검증</div>
         </div>
       </div>
@@ -966,7 +1040,7 @@
         <div class="rule-id">R-12</div>
         <div class="rule-body">
           <div class="rule-cond">API 실패</div>
-          <div class="rule-route" style="color:#f87171">Fallback Path</div>
+          <div class="rule-route" style="color:#dc2626;font-weight:600">Fallback Path</div>
           <div class="rule-opt">대체 모델 호출</div>
         </div>
       </div>
@@ -974,7 +1048,7 @@
         <div class="rule-id">R-13</div>
         <div class="rule-body">
           <div class="rule-cond">모델 성능 차이 미미</div>
-          <div class="rule-route" style="color:#34d399">Efficiency Path</div>
+          <div class="rule-route" style="color:#16a34a;font-weight:600">Efficiency Path</div>
           <div class="rule-opt">latency / cost 우선 선택</div>
         </div>
       </div>
@@ -1391,7 +1465,40 @@ SLA 기준 응답 시간: ≤ ??ms
 
 </div>
 
+<!-- ── 데모 iframe 오버레이 ── -->
+<div class="demo-overlay" id="demoOverlay" onclick="handleDemoOverlayClick(event)">
+  <div class="demo-container">
+    <div class="demo-topbar">
+      <div>
+        <div class="demo-topbar-title">라우팅 정책 데모</div>
+        <div class="demo-topbar-sub">Routing Policy Recommendation · 대화형 시뮬레이션</div>
+      </div>
+      <button class="btn-demo-close" onclick="closeDemo()">✕ 닫기</button>
+    </div>
+    <iframe class="demo-iframe" id="demoFrame" src="" title="라우팅 정책 데모"></iframe>
+  </div>
+</div>
+
 <script>
+  /* ── 데모 오버레이 ── */
+  function openDemo() {
+    var overlay = document.getElementById('demoOverlay');
+    var frame   = document.getElementById('demoFrame');
+    if (!frame.src || frame.src === window.location.href) {
+      frame.src = 'routing_policy_demo.html';
+    }
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeDemo() {
+    document.getElementById('demoOverlay').classList.remove('active');
+    document.body.style.overflow = '';
+  }
+  function handleDemoOverlayClick(e) {
+    if (e.target === document.getElementById('demoOverlay')) closeDemo();
+  }
+
+  /* ── 서비스 기능 모달 ── */
   function openModal(id) {
     document.querySelectorAll('.modal').forEach(function(m) { m.classList.remove('active'); });
     var modal = document.getElementById('modal-' + id);
@@ -1413,7 +1520,10 @@ SLA 기준 응답 시간: ≤ ??ms
   }
 
   document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeModal();
+    if (e.key === 'Escape') {
+      closeModal();
+      closeDemo();
+    }
   });
 
   function copyPrompt(id, btn) {
